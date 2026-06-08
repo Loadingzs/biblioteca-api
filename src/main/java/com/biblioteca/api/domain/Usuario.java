@@ -7,6 +7,8 @@ public class Usuario {
     private String nome;
     private String email;
     private String telefone;
+    private String senha;           // NOVO - senha criptografada
+    private String role;            // NOVO - ADMIN ou USER
     private LocalDate dataCadastro;
     
     // Construtor vazio (necessário para alguns frameworks)
@@ -17,6 +19,17 @@ public class Usuario {
         this.nome = nome;
         this.email = email;
         this.telefone = telefone;
+        this.role = "USER";  // Padrão: usuário comum
+        this.dataCadastro = LocalDate.now();
+    }
+    
+    // NOVO CONSTRUTOR com senha e role (para cadastro com autenticação)
+    public Usuario(String nome, String email, String telefone, String senha, String role) {
+        this.nome = nome;
+        this.email = email;
+        this.telefone = telefone;
+        this.senha = senha;
+        this.role = role != null ? role : "USER";
         this.dataCadastro = LocalDate.now();
     }
     
@@ -26,6 +39,17 @@ public class Usuario {
         this.nome = nome;
         this.email = email;
         this.telefone = telefone;
+        this.dataCadastro = dataCadastro;
+    }
+    
+    // NOVO CONSTRUTOR completo (para usuários existentes com senha e role)
+    public Usuario(int id, String nome, String email, String telefone, String senha, String role, LocalDate dataCadastro) {
+        this.id = id;
+        this.nome = nome;
+        this.email = email;
+        this.telefone = telefone;
+        this.senha = senha;
+        this.role = role;
         this.dataCadastro = dataCadastro;
     }
     
@@ -62,6 +86,24 @@ public class Usuario {
         this.telefone = telefone;
     }
     
+    // NOVO GETTER E SETTER para senha
+    public String getSenha() {
+        return senha;
+    }
+    
+    public void setSenha(String senha) {
+        this.senha = senha;
+    }
+    
+    // NOVO GETTER E SETTER para role
+    public String getRole() {
+        return role;
+    }
+    
+    public void setRole(String role) {
+        this.role = role;
+    }
+    
     public LocalDate getDataCadastro() {
         return dataCadastro;
     }
@@ -70,14 +112,20 @@ public class Usuario {
         this.dataCadastro = dataCadastro;
     }
     
-    // Validação de email (regra de negócio - será movida para Service depois)
+    // Validação de email
     public boolean isEmailValido() {
         return email != null && email.matches("^[A-Za-z0-9+_.-]+@(.+)$");
+    }
+    
+    // NOVO - Verifica se é admin
+    public boolean isAdmin() {
+        return "ADMIN".equals(role);
     }
     
     @Override
     public String toString() {
         return "Usuario [id=" + id + ", nome=" + nome + ", email=" + email + 
-               ", telefone=" + telefone + ", dataCadastro=" + dataCadastro + "]";
+               ", telefone=" + telefone + ", role=" + role + 
+               ", dataCadastro=" + dataCadastro + "]";
     }
 }

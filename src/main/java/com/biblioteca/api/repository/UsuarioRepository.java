@@ -1,16 +1,18 @@
 package com.biblioteca.api.repository;
 
-import com.biblioteca.api.domain.Usuario;  // ← ADICIONE ESTE IMPORT
+import com.biblioteca.api.domain.Usuario;
 import com.biblioteca.api.infrastructure.ConnectionFactory;
+import org.springframework.stereotype.Repository;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+@Repository
 public class UsuarioRepository {
     
     // ==================== CREATE ====================
     public boolean salvar(Usuario usuario) {
-        String sql = "INSERT INTO usuarios (nome, email, telefone) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO usuarios (nome, email, telefone, senha, role) VALUES (?, ?, ?, ?, ?)";
         
         try (Connection conn = ConnectionFactory.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -18,6 +20,8 @@ public class UsuarioRepository {
             stmt.setString(1, usuario.getNome());
             stmt.setString(2, usuario.getEmail());
             stmt.setString(3, usuario.getTelefone());
+            stmt.setString(4, usuario.getSenha());
+            stmt.setString(5, usuario.getRole() != null ? usuario.getRole() : "USER");
             
             int rowsAffected = stmt.executeUpdate();
             
@@ -88,7 +92,7 @@ public class UsuarioRepository {
     
     // ==================== UPDATE ====================
     public boolean atualizar(Usuario usuario) {
-        String sql = "UPDATE usuarios SET nome = ?, email = ?, telefone = ? WHERE id = ?";
+        String sql = "UPDATE usuarios SET nome = ?, email = ?, telefone = ?, role = ? WHERE id = ?";
         
         try (Connection conn = ConnectionFactory.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -96,7 +100,8 @@ public class UsuarioRepository {
             stmt.setString(1, usuario.getNome());
             stmt.setString(2, usuario.getEmail());
             stmt.setString(3, usuario.getTelefone());
-            stmt.setInt(4, usuario.getId());
+            stmt.setString(4, usuario.getRole() != null ? usuario.getRole() : "USER");
+            stmt.setInt(5, usuario.getId());
             
             int rowsAffected = stmt.executeUpdate();
             boolean sucesso = rowsAffected > 0;
@@ -109,6 +114,31 @@ public class UsuarioRepository {
             
         } catch (SQLException e) {
             System.err.println("❌ Erro ao atualizar usuário: " + e.getMessage());
+            return false;
+        }
+    }
+    
+    // ==================== UPDATE SENHA ====================
+    public boolean atualizarSenha(int id, String novaSenha) {
+        String sql = "UPDATE usuarios SET senha = ? WHERE id = ?";
+        
+        try (Connection conn = ConnectionFactory.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setString(1, novaSenha);
+            stmt.setInt(2, id);
+            
+            int rowsAffected = stmt.executeUpdate();
+            boolean sucesso = rowsAffected > 0;
+            
+            if (sucesso) {
+                System.out.println("✅ Senha atualizada para usuário ID: " + id);
+            }
+            
+            return sucesso;
+            
+        } catch (SQLException e) {
+            System.err.println("❌ Erro ao atualizar senha: " + e.getMessage());
             return false;
         }
     }
@@ -229,6 +259,8 @@ public class UsuarioRepository {
         usuario.setNome(rs.getString("nome"));
         usuario.setEmail(rs.getString("email"));
         usuario.setTelefone(rs.getString("telefone"));
+        usuario.setRole(rs.getString("role"));
+        usuario.setSenha(rs.getString("senha"));
         
         if (rs.getDate("data_cadastro") != null) {
             usuario.setDataCadastro(rs.getDate("data_cadastro").toLocalDate());

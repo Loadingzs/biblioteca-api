@@ -8,22 +8,22 @@ import com.biblioteca.api.repository.LivroRepository;
 import com.biblioteca.api.repository.UsuarioRepository;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;
 
-@Service  // ← ADICIONE ESTA LINHA
-
+@Service
 public class EmprestimoService {
-    
-    private EmprestimoRepository emprestimoRepository;
-    private LivroRepository livroRepository;
-    private UsuarioRepository usuarioRepository;
-    
-    public EmprestimoService() {
-        this.emprestimoRepository = new EmprestimoRepository();
-        this.livroRepository = new LivroRepository();
-        this.usuarioRepository = new UsuarioRepository();
+
+    private final EmprestimoRepository emprestimoRepository;
+    private final LivroRepository livroRepository;
+    private final UsuarioRepository usuarioRepository;
+
+    public EmprestimoService(EmprestimoRepository emprestimoRepository,
+                             LivroRepository livroRepository,
+                             UsuarioRepository usuarioRepository) {
+        this.emprestimoRepository = emprestimoRepository;
+        this.livroRepository = livroRepository;
+        this.usuarioRepository = usuarioRepository;
     }
     
     // ==================== REGRAS DE NEGÓCIO ====================
@@ -117,6 +117,11 @@ public class EmprestimoService {
     
     // Realizar novo empréstimo
     public boolean realizarEmprestimo(int livroId, int usuarioId, int diasParaDevolucao) {
+        if (diasParaDevolucao <= 0) {
+            System.err.println("❌ Prazo de devolução deve ser maior que zero");
+            return false;
+        }
+
         // Validar livro
         if (!isLivroDisponivel(livroId)) {
             System.err.println("❌ Livro não está disponível para empréstimo");

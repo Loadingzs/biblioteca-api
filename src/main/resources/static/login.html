@@ -4,16 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login | Biblioteca Web</title>
-    <link rel="stylesheet" href="css/style.css">
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a3c34, #2d6a4f);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
         .login-container {
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #1a3c34, #2d6a4f);
+            width: 100%;
+            padding: 20px;
         }
-        
+
         .login-card {
             background: white;
             border-radius: 20px;
@@ -21,38 +35,44 @@
             width: 100%;
             max-width: 400px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            animation: fadeIn 0.5s ease-in-out;
         }
-        
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         .login-logo {
             text-align: center;
             margin-bottom: 2rem;
         }
-        
+
         .login-logo h1 {
             font-size: 2rem;
             color: #1a3c34;
         }
-        
+
         .login-logo span {
             color: #ffd166;
         }
-        
+
         .login-logo p {
             color: #666;
             margin-top: 0.5rem;
         }
-        
+
         .form-group {
             margin-bottom: 1.5rem;
         }
-        
+
         .form-group label {
             display: block;
             margin-bottom: 0.5rem;
             font-weight: 600;
             color: #333;
         }
-        
+
         .form-group input {
             width: 100%;
             padding: 0.8rem;
@@ -61,12 +81,12 @@
             font-size: 1rem;
             transition: border 0.3s;
         }
-        
+
         .form-group input:focus {
             outline: none;
             border-color: #2d6a4f;
         }
-        
+
         .btn-login {
             width: 100%;
             background: linear-gradient(135deg, #1a3c34, #2d6a4f);
@@ -79,11 +99,17 @@
             cursor: pointer;
             transition: transform 0.3s;
         }
-        
+
         .btn-login:hover {
             transform: translateY(-2px);
         }
-        
+
+        .btn-login:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         .info-login {
             margin-top: 1.5rem;
             padding: 1rem;
@@ -92,16 +118,48 @@
             font-size: 0.8rem;
             color: #666;
         }
-        
+
         .info-login p {
             margin: 0.3rem 0;
         }
-        
+
         .info-login code {
             background: #e9ecef;
             padding: 0.2rem 0.5rem;
             border-radius: 5px;
             font-family: monospace;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.85rem;
+            display: none;
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #2d6a4f;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 1000;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .toast.error {
+            background: #e63946;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
         }
     </style>
 </head>
@@ -113,7 +171,9 @@
                 <p>Faça login para acessar o sistema</p>
             </div>
             
-            <form onsubmit="return fazerLogin(event)">
+            <div id="errorMessage" class="error-message"></div>
+            
+            <form id="loginForm">
                 <div class="form-group">
                     <label>📧 E-mail</label>
                     <input type="email" id="email" placeholder="admin@biblioteca.com" required>
@@ -124,7 +184,7 @@
                     <input type="password" id="senha" placeholder="••••••••" required>
                 </div>
                 
-                <button type="submit" class="btn-login">Entrar no Sistema</button>
+                <button type="submit" class="btn-login" id="btnLogin">Entrar no Sistema</button>
             </form>
             
             <div class="info-login">
@@ -134,7 +194,66 @@
             </div>
         </div>
     </div>
-    
-    <script src="js/scripts.js"></script>
+
+    <script>
+        const API_URL = 'http://localhost:8080/api';
+
+        function showToast(message, isError = false) {
+            const toast = document.createElement('div');
+            toast.className = 'toast' + (isError ? ' error' : '');
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const senha = document.getElementById('senha').value;
+            const btn = document.getElementById('btnLogin');
+            const errorDiv = document.getElementById('errorMessage');
+            
+            btn.disabled = true;
+            btn.textContent = '⏳ Entrando...';
+            errorDiv.style.display = 'none';
+            
+            try {
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, senha })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.token) {
+                    // Salvar token no localStorage
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('userEmail', data.email);
+                    localStorage.setItem('userRole', data.role);
+                    
+                    showToast('✅ Login realizado com sucesso!');
+                    
+                    // Redirecionar para o dashboard
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1000);
+                } else {
+                    errorDiv.textContent = data.message || '❌ Email ou senha inválidos!';
+                    errorDiv.style.display = 'block';
+                    showToast('❌ Email ou senha inválidos!', true);
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                errorDiv.textContent = '❌ Erro de conexão com o servidor. Verifique se o back-end está rodando.';
+                errorDiv.style.display = 'block';
+                showToast('❌ Erro de conexão com o servidor', true);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Entrar no Sistema';
+            }
+        });
+    </script>
 </body>
 </html>

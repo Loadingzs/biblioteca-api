@@ -2,18 +2,16 @@ package com.biblioteca.api.service;
 
 import com.biblioteca.api.domain.Usuario;
 import com.biblioteca.api.repository.UsuarioRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;
 
-@Service  // ← ADICIONE ESTA LINHA
-
+@Service
 public class UsuarioService {
-    
-    private UsuarioRepository usuarioRepository;
-    
-    public UsuarioService() {
-        this.usuarioRepository = new UsuarioRepository();
+
+    private final UsuarioRepository usuarioRepository;
+
+    public UsuarioService(UsuarioRepository usuarioRepository) {
+        this.usuarioRepository = usuarioRepository;
     }
     
     // ==================== REGRAS DE NEGÓCIO ====================

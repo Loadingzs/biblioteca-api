@@ -2,19 +2,16 @@ package com.biblioteca.api.service;
 
 import com.biblioteca.api.domain.Livro;
 import com.biblioteca.api.repository.LivroRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
 public class LivroService {
-    
-    @Autowired
-    private LivroRepository livroRepository;
-    
-    // Construtor (opcional, o @Autowired já resolve)
-    public LivroService() {
-        // O Spring vai injetar o repository automaticamente
+
+    private final LivroRepository livroRepository;
+
+    public LivroService(LivroRepository livroRepository) {
+        this.livroRepository = livroRepository;
     }
     
     // ==================== MÉTODOS AUXILIARES ====================

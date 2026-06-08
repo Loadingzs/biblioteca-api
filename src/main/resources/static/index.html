@@ -7,16 +7,22 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <!-- Transição entre páginas -->
+    <div id="pageTransition" class="page-transition">
+        <div class="transition-spinner"></div>
+    </div>
+
     <header class="header">
         <div class="logo">📚 <span>Biblioteca</span> Web</div>
         <nav class="nav">
-            <a href="index.html">Dashboard</a>
-            <a href="livros.html">Livros</a>
-            <a href="usuarios.html">Usuários</a>
-            <a href="emprestimos.html">Empréstimos</a>
-            <a href="relatorios.html">Relatórios</a>
+            <a href="javascript:void(0);" onclick="navegarPara('index.html')">Dashboard</a>
+            <a href="javascript:void(0);" onclick="navegarPara('livros.html')">Livros</a>
+            <a href="javascript:void(0);" onclick="navegarPara('usuarios.html')">Usuários</a>
+            <a href="javascript:void(0);" onclick="navegarPara('emprestimos.html')">Empréstimos</a>
+            <a href="javascript:void(0);" onclick="navegarPara('relatorios.html')">Relatórios</a>
         </nav>
         <div class="user-info">
+            <button class="theme-toggle" id="themeToggle" title="Alternar tema">🌙</button>
             <span>👤 Admin</span>
             <button class="btn-sair" onclick="sair()">Sair</button>
         </div>
@@ -69,13 +75,13 @@
 
         <div class="tabela-container">
             <h3>📋 Últimos Empréstimos</h3>
-            <table>
+            <table style="width: 100%; border-collapse: collapse;">
                 <thead>
-                    <tr>
-                        <th>Usuário</th>
-                        <th>Livro</th>
-                        <th>Data de Empréstimo</th>
-                        <th>Status</th>
+                    <tr style="background: #f8f9fa;">
+                        <th style="padding: 0.75rem;">Usuário</th>
+                        <th style="padding: 0.75rem;">Livro</th>
+                        <th style="padding: 0.75rem;">Data de Empréstimo</th>
+                        <th style="padding: 0.75rem;">Status</th>
                     </tr>
                 </thead>
                 <tbody id="tabelaEmprestimos"></tbody>
@@ -88,5 +94,18 @@
     </footer>
 
     <script src="js/scripts.js"></script>
+    <script>
+        // Use funções globais definidas em js/scripts.js e inicializa o dashboard
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuth();
+            document.body.classList.add('fade-in');
+            setTimeout(() => document.body.classList.remove('fade-in'), 500);
+            initTheme();
+            const themeToggle = document.getElementById('themeToggle');
+            if (themeToggle) themeToggle.addEventListener('click', toggleTheme);
+            if (typeof carregarDashboard === 'function') carregarDashboard();
+            const ano = document.getElementById('anoAtual'); if (ano) ano.innerText = new Date().getFullYear();
+        });
+    </script>
 </body>
 </html>

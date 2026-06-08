@@ -5,41 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gerenciar Usuários | Biblioteca Web</title>
     <link rel="stylesheet" href="css/style.css">
-    <style>
-        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
-        .page-header h2 { color: #1a3c34; }
-        .btn-primary { background: #2d6a4f; color: white; border: none; padding: 0.7rem 1.5rem; border-radius: 8px; cursor: pointer; }
-        .btn-edit { background: #ffc107; color: #333; border: none; padding: 0.3rem 0.8rem; border-radius: 5px; cursor: pointer; margin-right: 0.3rem; }
-        .btn-delete { background: #e63946; color: white; border: none; padding: 0.3rem 0.8rem; border-radius: 5px; cursor: pointer; }
-        .search-bar { margin-bottom: 1.5rem; display: flex; gap: 1rem; }
-        .search-bar input { flex: 1; padding: 0.7rem; border: 1px solid #ddd; border-radius: 8px; }
-        .search-bar button { background: #1a3c34; color: white; border: none; padding: 0.7rem 1.5rem; border-radius: 8px; cursor: pointer; }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
-        .modal-content { background: white; border-radius: 20px; padding: 2rem; width: 90%; max-width: 500px; }
-        .modal-content input { width: 100%; padding: 0.7rem; margin-bottom: 1rem; border: 1px solid #ddd; border-radius: 8px; }
-        .modal-buttons { display: flex; gap: 1rem; justify-content: flex-end; }
-        .btn-save { background: #2d6a4f; color: white; border: none; padding: 0.5rem 1.5rem; border-radius: 8px; cursor: pointer; }
-        .btn-cancel { background: #6c757d; color: white; border: none; padding: 0.5rem 1.5rem; border-radius: 8px; cursor: pointer; }
-        .pagination-container { display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; flex-wrap: wrap; gap: 1rem; }
-        .pagination-controls { display: flex; gap: 0.5rem; align-items: center; }
-        .pagination-btn { background: white; border: 1px solid #ddd; padding: 0.5rem 1rem; border-radius: 5px; cursor: pointer; }
-        .pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .table-loading { text-align: center; padding: 2rem; color: #666; }
-        .spinner-small { width: 30px; height: 30px; border: 3px solid #f3f3f3; border-top: 3px solid #2d6a4f; border-radius: 50%; animation: spin 1s linear infinite; display: inline-block; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    </style>
 </head>
 <body>
+    <div id="pageTransition" class="page-transition"><div class="transition-spinner"></div></div>
+
     <header class="header">
         <div class="logo">📚 <span>Biblioteca</span> Web</div>
         <nav class="nav">
-            <a href="index.html">Dashboard</a>
-            <a href="livros.html">Livros</a>
-            <a href="usuarios.html" style="background: rgba(255,255,255,0.2);">Usuários</a>
-            <a href="emprestimos.html">Empréstimos</a>
-            <a href="relatorios.html">Relatórios</a>
+            <a href="javascript:void(0);" onclick="navegarPara('index.html')">Dashboard</a>
+            <a href="javascript:void(0);" onclick="navegarPara('livros.html')">Livros</a>
+            <a href="javascript:void(0);" onclick="navegarPara('usuarios.html')" style="background: rgba(255,255,255,0.2);">Usuários</a>
+            <a href="javascript:void(0);" onclick="navegarPara('emprestimos.html')">Empréstimos</a>
+            <a href="javascript:void(0);" onclick="navegarPara('relatorios.html')">Relatórios</a>
         </nav>
         <div class="user-info">
+            <button class="theme-toggle" id="themeToggle" title="Alternar tema">🌙</button>
             <span>👤 Admin</span>
             <button class="btn-sair" onclick="sair()">Sair</button>
         </div>
@@ -58,8 +38,12 @@
         
         <div class="tabela-container">
             <table style="width: 100%; border-collapse: collapse;">
-                <thead><tr style="background: #f8f9fa;"><th>ID</th><th>Nome</th><th>Email</th><th>Telefone</th><th>Ações</th></tr></thead>
-                <tbody id="tabelaUsuarios"><tr><td colspan="5" class="table-loading"><div class="spinner-small"></div><br>Carregando usuários...</td></tr</tbody>
+                <thead><tr style="background: #f8f9fa;"><th style="padding: 0.75rem;">ID</th><th style="padding: 0.75rem;">Nome</th><th style="padding: 0.75rem;">Email</th><th style="padding: 0.75rem;">Telefone</th><th style="padding: 0.75rem;">Ações</th></tr></thead>
+                <tbody id="tabelaUsuarios">
+                    <tr>
+                        <td colspan="5" class="table-loading"><div class="spinner-small"></div><br>Carregando usuários...</td>
+                    </tr>
+                </tbody>
             </table>
             <div class="pagination-container">
                 <div class="pagination-info" id="paginationInfo">Mostrando 0 de 0 registros</div>
@@ -90,86 +74,193 @@
     
     <script src="js/scripts.js"></script>
     <script>
-        // NÃO DECLARAR API_URL AQUI
+        const usuariosContainer = {
+            tabela: document.getElementById('tabelaUsuarios'),
+            busca: document.getElementById('buscaUsuario'),
+            modal: document.getElementById('modalUsuario'),
+            modalTitulo: document.getElementById('modalTitulo'),
+            usuarioId: document.getElementById('usuarioId'),
+            nome: document.getElementById('nome'),
+            email: document.getElementById('email'),
+            telefone: document.getElementById('telefone'),
+            paginationInfo: document.getElementById('paginationInfo'),
+            paginaAtual: document.getElementById('paginaAtual'),
+            btnAnterior: document.getElementById('btnAnterior'),
+            btnProximo: document.getElementById('btnProximo'),
+            anoAtual: document.getElementById('anoAtual')
+        };
+
         let usuarios = [];
         let usuariosFiltrados = [];
         let editandoUsuarioId = null;
         let paginaAtual = 1;
-        let itensPorPagina = 5;
-        let totalPaginas = 1;
+        const itensPorPagina = 5;
 
         function atualizarPaginacao() {
-            totalPaginas = Math.ceil(usuariosFiltrados.length / itensPorPagina);
-            if (totalPaginas === 0) totalPaginas = 1;
+            const totalPaginas = Math.max(1, Math.ceil(usuariosFiltrados.length / itensPorPagina));
             if (paginaAtual > totalPaginas) paginaAtual = totalPaginas;
-            document.getElementById('paginationInfo').innerHTML = `Mostrando ${Math.min(itensPorPagina, usuariosFiltrados.length)} de ${usuariosFiltrados.length} registros`;
-            document.getElementById('paginaAtual').innerHTML = `Página ${paginaAtual} de ${totalPaginas}`;
-            document.getElementById('btnAnterior').disabled = (paginaAtual <= 1);
-            document.getElementById('btnProximo').disabled = (paginaAtual >= totalPaginas);
+            const exibidos = Math.min(itensPorPagina, usuariosFiltrados.length);
+            usuariosContainer.paginationInfo.textContent = `Mostrando ${exibidos} de ${usuariosFiltrados.length} registros`;
+            usuariosContainer.paginaAtual.textContent = `Página ${paginaAtual} de ${totalPaginas}`;
+            usuariosContainer.btnAnterior.disabled = paginaAtual <= 1;
+            usuariosContainer.btnProximo.disabled = paginaAtual >= totalPaginas;
+            return totalPaginas;
         }
 
-        function paginaAnterior() { if (paginaAtual > 1) { paginaAtual--; renderizarTabelaUsuarios(); } }
-        function paginaProxima() { if (paginaAtual < totalPaginas) { paginaAtual++; renderizarTabelaUsuarios(); } }
-
-        async function carregarUsuarios() {
-            try {
-                const response = await fetch(`${API_URL}/usuarios`);
-                if (!response.ok) throw new Error('Erro');
-                usuarios = await response.json();
-                usuariosFiltrados = [...usuarios];
-                paginaAtual = 1;
+        function paginaAnterior() {
+            if (paginaAtual > 1) {
+                paginaAtual -= 1;
                 renderizarTabelaUsuarios();
-            } catch (error) {
-                document.getElementById('tabelaUsuarios').innerHTML = '<tr><td colspan="5" style="text-align: center; color: red;">❌ Erro ao conectar</td></tr';
+            }
+        }
+
+        function paginaProxima() {
+            const totalPaginas = Math.max(1, Math.ceil(usuariosFiltrados.length / itensPorPagina));
+            if (paginaAtual < totalPaginas) {
+                paginaAtual += 1;
+                renderizarTabelaUsuarios();
             }
         }
 
         function renderizarTabelaUsuarios() {
-            const tbody = document.getElementById('tabelaUsuarios');
-            tbody.innerHTML = '';
+            if (!usuariosContainer.tabela) return;
+            usuariosContainer.tabela.innerHTML = '';
             atualizarPaginacao();
             const inicio = (paginaAtual - 1) * itensPorPagina;
-            const usuariosPagina = usuariosFiltrados.slice(inicio, inicio + itensPorPagina);
-            if (usuariosPagina.length === 0) { tbody.innerHTML = '<tr><td colspan="5">Nenhum usuário encontrado</td></tr'; return; }
-            usuariosPagina.forEach(u => {
-                const row = tbody.insertRow();
-                row.innerHTML = `<td>${u.id}</td><td>${u.nome}</td><td>${u.email}</td><td>${u.telefone}</td>
-                    <td><button class="btn-edit" onclick="editarUsuario(${u.id})">✏️</button>
-                    <button class="btn-delete" onclick="deletarUsuario(${u.id})">🗑️</button></td>`;
+            const paginados = usuariosFiltrados.slice(inicio, inicio + itensPorPagina);
+
+            if (paginados.length === 0) {
+                usuariosContainer.tabela.innerHTML = '<tr><td colspan="5">Nenhum usuário encontrado</td></tr>';
+                return;
+            }
+
+            const fragment = document.createDocumentFragment();
+            paginados.forEach(u => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${u.id}</td>
+                    <td>${u.nome}</td>
+                    <td>${u.email}</td>
+                    <td>${u.telefone}</td>
+                    <td>
+                        <button class="btn-edit" type="button" onclick="editarUsuario(${u.id})">✏️</button>
+                        <button class="btn-delete" type="button" onclick="deletarUsuario(${u.id})">🗑️</button>
+                    </td>`;
+                fragment.appendChild(row);
             });
+
+            usuariosContainer.tabela.appendChild(fragment);
+        }
+
+        async function carregarUsuarios() {
+            if (!usuariosContainer.tabela) return;
+            usuariosContainer.tabela.innerHTML = '<tr><td colspan="5" class="table-loading"><div class="spinner-small"></div><br>Carregando usuários...</td></tr>';
+            try {
+                const res = await fetch(`${API_URL}/usuarios`);
+                usuarios = await res.json();
+                usuariosFiltrados = [...usuarios];
+                paginaAtual = 1;
+                renderizarTabelaUsuarios();
+            } catch (e) {
+                usuariosContainer.tabela.innerHTML = '<tr><td colspan="5" style="color:red;">❌ Erro ao carregar usuários</td></tr>';
+                console.error(e);
+            }
         }
 
         function filtrarUsuarios() {
-            const busca = document.getElementById('buscaUsuario').value.toLowerCase();
-            usuariosFiltrados = busca === '' ? [...usuarios] : usuarios.filter(u => u.nome.toLowerCase().includes(busca) || u.email.toLowerCase().includes(busca));
+            if (!usuariosContainer.busca) return;
+            const busca = usuariosContainer.busca.value.trim().toLowerCase();
+            usuariosFiltrados = busca ? usuarios.filter(u => u.nome.toLowerCase().includes(busca) || u.email.toLowerCase().includes(busca)) : [...usuarios];
             paginaAtual = 1;
             renderizarTabelaUsuarios();
         }
 
-        function abrirModalCadastro() { editandoUsuarioId = null; document.getElementById('modalTitulo').innerText = '👤 Novo Usuário'; document.getElementById('usuarioId').value = ''; document.getElementById('nome').value = ''; document.getElementById('email').value = ''; document.getElementById('telefone').value = ''; document.getElementById('modalUsuario').style.display = 'flex'; }
-        function editarUsuario(id) { const u = usuarios.find(x => x.id === id); if (u) { editandoUsuarioId = id; document.getElementById('modalTitulo').innerText = '✏️ Editar Usuário'; document.getElementById('usuarioId').value = u.id; document.getElementById('nome').value = u.nome; document.getElementById('email').value = u.email; document.getElementById('telefone').value = u.telefone; document.getElementById('modalUsuario').style.display = 'flex'; } }
-        function fecharModal() { document.getElementById('modalUsuario').style.display = 'none'; }
-
-        async function salvarUsuario() {
-            const nome = document.getElementById('nome').value.trim(), email = document.getElementById('email').value.trim(), telefone = document.getElementById('telefone').value.trim();
-            if (!nome || !email || !telefone) { alert('❌ Preencha todos os campos!'); return; }
-            const usuario = { nome, email, telefone };
-            try {
-                let response;
-                if (editandoUsuarioId) response = await fetch(`${API_URL}/usuarios/${editandoUsuarioId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(usuario) });
-                else response = await fetch(`${API_URL}/usuarios`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(usuario) });
-                if (response.ok) { alert(editandoUsuarioId ? '✅ Usuário atualizado!' : '✅ Usuário cadastrado!'); fecharModal(); carregarUsuarios(); } else alert('❌ Erro ao salvar');
-            } catch (error) { alert('❌ Erro de conexão'); }
+        function abrirModalCadastro() {
+            editandoUsuarioId = null;
+            if (!usuariosContainer.modal) return;
+            usuariosContainer.modalTitulo.textContent = '👤 Novo Usuário';
+            usuariosContainer.usuarioId.value = '';
+            usuariosContainer.nome.value = '';
+            usuariosContainer.email.value = '';
+            usuariosContainer.telefone.value = '';
+            usuariosContainer.modal.style.display = 'flex';
         }
 
-        async function deletarUsuario(id) {
-            if (confirm('⚠️ Tem certeza?')) {
-                try { const response = await fetch(`${API_URL}/usuarios/${id}`, { method: 'DELETE' }); if (response.ok) { alert('✅ Usuário excluído!'); carregarUsuarios(); } else alert('❌ Erro ao excluir'); } catch (error) { alert('❌ Erro de conexão'); }
+        function editarUsuario(id) {
+            const usuario = usuarios.find(u => u.id === id);
+            if (!usuario || !usuariosContainer.modal) return;
+            editandoUsuarioId = id;
+            usuariosContainer.modalTitulo.textContent = '✏️ Editar Usuário';
+            usuariosContainer.usuarioId.value = usuario.id;
+            usuariosContainer.nome.value = usuario.nome;
+            usuariosContainer.email.value = usuario.email;
+            usuariosContainer.telefone.value = usuario.telefone;
+            usuariosContainer.modal.style.display = 'flex';
+        }
+
+        function fecharModal() {
+            if (usuariosContainer.modal) usuariosContainer.modal.style.display = 'none';
+        }
+
+        async function salvarUsuario() {
+            const nome = usuariosContainer.nome.value.trim();
+            const email = usuariosContainer.email.value.trim();
+            const telefone = usuariosContainer.telefone.value.trim();
+
+            if (!nome || !email || !telefone) {
+                showToast('error', null, '❌ Preencha todos os campos!');
+                return;
+            }
+
+            const usuario = { nome, email, telefone };
+            const url = editandoUsuarioId ? `${API_URL}/usuarios/${editandoUsuarioId}` : `${API_URL}/usuarios`;
+            const method = editandoUsuarioId ? 'PUT' : 'POST';
+
+            try {
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(usuario)
+                });
+
+                if (!res.ok) throw new Error('Erro ao salvar');
+
+                showToast('success', null, editandoUsuarioId ? '✅ Usuário atualizado!' : '✅ Usuário cadastrado!');
+                fecharModal();
+                carregarUsuarios();
+            } catch (e) {
+                showToast('error', null, '❌ Erro de conexão');
+                console.error(e);
             }
         }
 
-        carregarUsuarios();
-        document.getElementById('buscaUsuario').addEventListener('keyup', filtrarUsuarios);
+        async function deletarUsuario(id) {
+            if (!(await showConfirm('⚠️ Tem certeza?'))) return;
+            try {
+                const res = await fetch(`${API_URL}/usuarios/${id}`, { method: 'DELETE' });
+                if (!res.ok) throw new Error('Erro ao excluir');
+                showToast('success', null, '✅ Usuário excluído!');
+                carregarUsuarios();
+            } catch (e) {
+                showToast('error', null, '❌ Erro de conexão');
+                console.error(e);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuth();
+            initTheme();
+            carregarUsuarios();
+            if (usuariosContainer.busca) {
+                usuariosContainer.busca.addEventListener('keyup', filtrarUsuarios);
+            }
+            if (usuariosContainer.anoAtual) {
+                usuariosContainer.anoAtual.textContent = new Date().getFullYear();
+            }
+            window.addEventListener('click', event => {
+                if (event.target === usuariosContainer.modal) fecharModal();
+            });
+        });
     </script>
 </body>
 </html>

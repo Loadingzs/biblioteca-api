@@ -5,6 +5,9 @@ import com.biblioteca.api.infrastructure.ConnectionFactory;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import org.springframework.stereotype.Repository;  // ← ADICIONE
+
+@Repository
 
 public class EmprestimoRepository {
     

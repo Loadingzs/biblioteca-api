@@ -1,121 +1,12 @@
-// js/scripts.js
-const API_URL = 'http://localhost:8080/api';
-
-// ===== FUNÇÕES GLOBAIS =====
-function sair() {
-    alert('🔓 Logout realizado com sucesso!');
-    window.location.href = 'login.html';
+// Minimal config to avoid duplicating globals from js/scripts.js
+// Define `API_URL` only if not already defined by other scripts.
+if (typeof API_URL === 'undefined') {
+    var API_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+        ? 'http://localhost:8080/api'
+        : '/api';
 }
 
-// ===== LOGIN =====
-async function fazerLogin(event) {
-    event.preventDefault();
-    
-    const email = document.getElementById('email')?.value;
-    const senha = document.getElementById('senha')?.value;
-    
-    try {
-        const response = await fetch(`${API_URL}/auth/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, senha })
-        });
-        
-        const resultado = await response.json();
-        
-        if (resultado.success) {
-            alert('✅ Login realizado com sucesso!');
-            window.location.href = 'index.html';
-        } else {
-            alert('❌ Email ou senha inválidos! Use: admin@biblioteca.com / admin123');
-        }
-    } catch (error) {
-        console.error('Erro:', error);
-        alert('❌ Erro de conexão com o servidor. Verifique se o back-end está rodando.');
-    }
-    
-    return false;
-}
-
-// ===== DASHBOARD =====
-async function carregarDashboard() {
-    try {
-        // Carregar estatísticas
-        const responseLivros = await fetch(`${API_URL}/livros`);
-        const responseUsuarios = await fetch(`${API_URL}/usuarios`);
-        const responseEmprestimos = await fetch(`${API_URL}/emprestimos/ativos`);
-        
-        const livros = await responseLivros.json();
-        const usuarios = await responseUsuarios.json();
-        const emprestimosAtivos = await responseEmprestimos.json();
-        
-        document.getElementById('totalLivros').innerText = livros.length;
-        document.getElementById('totalUsuarios').innerText = usuarios.length;
-        document.getElementById('emprestimosAtivos').innerText = emprestimosAtivos.length;
-        document.getElementById('statLivros').innerText = livros.length;
-        document.getElementById('statEmprestimos').innerText = emprestimosAtivos.length;
-        
-        // Calcular multas (simulação com dados reais)
-        const responseMultas = await fetch(`${API_URL}/emprestimos`);
-        const todosEmprestimos = await responseMultas.json();
-        let multasPendentes = 0;
-        todosEmprestimos.forEach(emp => {
-            if (emp.status === 'ATRASADO') multasPendentes += 10;
-        });
-        document.getElementById('statMultas').innerText = `R$ ${multasPendentes.toFixed(2)}`;
-        
-        // Carregar últimos empréstimos
-        const ultimos = todosEmprestimos.slice(-5);
-        const tabelaBody = document.getElementById('tabelaEmprestimos');
-        if (tabelaBody) {
-            tabelaBody.innerHTML = '';
-            for (const emp of ultimos.reverse()) {
-                const usuario = await buscarUsuarioPorId(emp.usuarioId);
-                const livro = await buscarLivroPorId(emp.livroId);
-                const row = tabelaBody.insertRow();
-                let statusClass = '';
-                if (emp.status === 'ATIVO') statusClass = 'status-ativo';
-                else if (emp.status === 'ATRASADO') statusClass = 'status-atrasado';
-                else statusClass = 'status-devolvido';
-                row.innerHTML = `
-                    <td>${usuario?.nome || 'N/A'}</td>
-                    <td>${livro?.titulo || 'N/A'}</td>
-                    <td>${emp.dataEmprestimo || '-'}</td>
-                    <td class="${statusClass}">${emp.status || '-'}</td>
-                `;
-            }
-        }
-    } catch (error) {
-        console.error('Erro ao carregar dashboard:', error);
-    }
-}
-
-async function buscarUsuarioPorId(id) {
-    try {
-        const response = await fetch(`${API_URL}/usuarios/${id}`);
-        return await response.json();
-    } catch { return null; }
-}
-
-async function buscarLivroPorId(id) {
-    try {
-        const response = await fetch(`${API_URL}/livros/${id}`);
-        return await response.json();
-    } catch { return null; }
-}
-
+// Expose a small helper to navigate (non-intrusive)
 function navegarPara(pagina) {
     window.location.href = pagina;
 }
-
-// Inicializar dashboard ao carregar
-document.addEventListener('DOMContentLoaded', function() {
-    if (window.location.pathname.includes('index.html') || window.location.pathname === '/' || window.location.pathname.endsWith('/')) {
-        carregarDashboard();
-    }
-    
-    const anoElement = document.getElementById('anoAtual');
-    if (anoElement) {
-        anoElement.innerText = new Date().getFullYear();
-    }
-});

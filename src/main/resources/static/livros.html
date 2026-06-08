@@ -5,199 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gerenciar Livros | Biblioteca Web</title>
     <link rel="stylesheet" href="css/style.css">
-    <style>
-        .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-        }
-        
-        .page-header h2 {
-            color: #1a3c34;
-        }
-        
-        .btn-primary {
-            background: #2d6a4f;
-            color: white;
-            border: none;
-            padding: 0.7rem 1.5rem;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: background 0.3s;
-        }
-        
-        .btn-primary:hover {
-            background: #1a3c34;
-        }
-        
-        .btn-edit {
-            background: #ffc107;
-            color: #333;
-            border: none;
-            padding: 0.3rem 0.8rem;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-right: 0.3rem;
-        }
-        
-        .btn-delete {
-            background: #e63946;
-            color: white;
-            border: none;
-            padding: 0.3rem 0.8rem;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        
-        .search-bar {
-            margin-bottom: 1.5rem;
-            display: flex;
-            gap: 1rem;
-        }
-        
-        .search-bar input {
-            flex: 1;
-            padding: 0.7rem;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 1rem;
-        }
-        
-        .search-bar button {
-            background: #1a3c34;
-            color: white;
-            border: none;
-            padding: 0.7rem 1.5rem;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-        
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-        
-        .modal-content {
-            background: white;
-            border-radius: 20px;
-            padding: 2rem;
-            width: 90%;
-            max-width: 500px;
-        }
-        
-        .modal-content h3 {
-            margin-bottom: 1rem;
-            color: #1a3c34;
-        }
-        
-        .modal-content input, .modal-content select {
-            width: 100%;
-            padding: 0.7rem;
-            margin-bottom: 1rem;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-        }
-        
-        .modal-buttons {
-            display: flex;
-            gap: 1rem;
-            justify-content: flex-end;
-        }
-        
-        .modal-buttons button {
-            padding: 0.5rem 1.5rem;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-        
-        .btn-save {
-            background: #2d6a4f;
-            color: white;
-        }
-        
-        .btn-cancel {
-            background: #6c757d;
-            color: white;
-        }
-
-        .pagination-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 1.5rem;
-            padding: 1rem;
-            background: #f8f9fa;
-            border-radius: 8px;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-
-        .pagination-controls {
-            display: flex;
-            gap: 0.5rem;
-            align-items: center;
-        }
-
-        .pagination-btn {
-            background: white;
-            border: 1px solid #ddd;
-            padding: 0.5rem 1rem;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .pagination-btn:hover:not(:disabled) {
-            background: #2d6a4f;
-            color: white;
-            border-color: #2d6a4f;
-        }
-
-        .pagination-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .pagination-info {
-            color: #666;
-            font-size: 0.9rem;
-        }
-
-        .table-loading {
-            text-align: center;
-            padding: 2rem;
-            color: #666;
-        }
-
-        .spinner-small {
-            width: 30px;
-            height: 30px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #2d6a4f;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            display: inline-block;
-            margin-bottom: 0.5rem;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
 </head>
 <body>
+        <!-- Transição entre páginas -->
+    <div id="pageTransition" class="page-transition">
+        <div class="transition-spinner"></div>
+    </div>
     <header class="header">
         <div class="logo">📚 <span>Biblioteca</span> Web</div>
         <nav class="nav">
@@ -208,6 +21,7 @@
             <a href="relatorios.html">Relatórios</a>
         </nav>
         <div class="user-info">
+            <button class="theme-toggle" id="themeToggle" title="Alternar tema">🌙</button>
             <span>👤 Admin</span>
             <button class="btn-sair" onclick="sair()">Sair</button>
         </div>
@@ -220,7 +34,7 @@
         </div>
         
         <div class="search-bar">
-            <input type="text" id="buscaLivro" placeholder="Buscar por título, autor ou ISBN..." onkeyup="filtrarLivros()">
+            <input type="text" id="buscaLivro" placeholder="Buscar por título, autor ou ISBN...">
             <button onclick="filtrarLivros()">🔍 Buscar</button>
         </div>
         
@@ -237,17 +51,12 @@
                     </tr>
                 </thead>
                 <tbody id="tabelaLivros">
-                    <tr><td colspan="6" class="table-loading">
-                        <div class="spinner-small"></div><br>
-                        Carregando livros...
-                    </td></tr>
+                    <tr><td colspan="6" class="table-loading"><div class="spinner-small"></div><br>Carregando livros...</td></tr>
                 </tbody>
             </table>
             
             <div class="pagination-container" id="paginationContainer">
-                <div class="pagination-info" id="paginationInfo">
-                    Mostrando 0 de 0 registros
-                </div>
+                <div class="pagination-info" id="paginationInfo">Mostrando 0 de 0 registros</div>
                 <div class="pagination-controls">
                     <button class="pagination-btn" id="btnAnterior" onclick="paginaAnterior()">◀ Anterior</button>
                     <span id="paginaAtual">Página 1</span>
@@ -281,42 +90,45 @@
     
     <script src="js/scripts.js"></script>
     <script>
+        const livrosContainer = {
+            tabela: document.getElementById('tabelaLivros'),
+            busca: document.getElementById('buscaLivro'),
+            modal: document.getElementById('modalLivro'),
+            modalTitulo: document.getElementById('modalTitulo'),
+            livroId: document.getElementById('livroId'),
+            titulo: document.getElementById('titulo'),
+            autor: document.getElementById('autor'),
+            isbn: document.getElementById('isbn'),
+            status: document.getElementById('status'),
+            paginationInfo: document.getElementById('paginationInfo'),
+            paginaAtualEl: document.getElementById('paginaAtual'),
+            btnAnterior: document.getElementById('btnAnterior'),
+            btnProximo: document.getElementById('btnProximo')
+        };
+
         let livros = [];
         let livrosFiltrados = [];
         let editandoId = null;
-        
         let paginaAtual = 1;
-        let itensPorPagina = 5;
-        let totalPaginas = 1;
+        const itensPorPagina = 5;
 
         function atualizarPaginacao() {
-            totalPaginas = Math.ceil(livrosFiltrados.length / itensPorPagina);
-            if (totalPaginas === 0) totalPaginas = 1;
+            const totalPaginas = Math.max(1, Math.ceil(livrosFiltrados.length / itensPorPagina));
             if (paginaAtual > totalPaginas) paginaAtual = totalPaginas;
-            
-            document.getElementById('paginationInfo').innerHTML = `Mostrando ${Math.min(itensPorPagina, livrosFiltrados.length)} de ${livrosFiltrados.length} registros`;
-            document.getElementById('paginaAtual').innerHTML = `Página ${paginaAtual} de ${totalPaginas}`;
-            
-            document.getElementById('btnAnterior').disabled = (paginaAtual <= 1);
-            document.getElementById('btnProximo').disabled = (paginaAtual >= totalPaginas);
+            const exibidos = Math.min(itensPorPagina, livrosFiltrados.length);
+            if (livrosContainer.paginationInfo) livrosContainer.paginationInfo.textContent = `Mostrando ${exibidos} de ${livrosFiltrados.length} registros`;
+            if (livrosContainer.paginaAtualEl) livrosContainer.paginaAtualEl.textContent = `Página ${paginaAtual} de ${totalPaginas}`;
+            if (livrosContainer.btnAnterior) livrosContainer.btnAnterior.disabled = paginaAtual <= 1;
+            if (livrosContainer.btnProximo) livrosContainer.btnProximo.disabled = paginaAtual >= totalPaginas;
+            return totalPaginas;
         }
 
-        function paginaAnterior() {
-            if (paginaAtual > 1) {
-                paginaAtual--;
-                renderizarTabelaLivros();
-            }
-        }
-
-        function paginaProxima() {
-            if (paginaAtual < totalPaginas) {
-                paginaAtual++;
-                renderizarTabelaLivros();
-            }
-        }
+        function paginaAnterior() { if (paginaAtual > 1) { paginaAtual--; renderizarTabelaLivros(); } }
+        function paginaProxima() { const total = Math.max(1, Math.ceil(livrosFiltrados.length / itensPorPagina)); if (paginaAtual < total) { paginaAtual++; renderizarTabelaLivros(); } }
 
         async function carregarLivros() {
-            mostrarLoadingTabela('tabelaLivros');
+            if (!livrosContainer.tabela) return;
+            livrosContainer.tabela.innerHTML = '<tr><td colspan="6" class="table-loading"><div class="spinner-small"></div><br>Carregando livros...</td></tr>';
             try {
                 const response = await fetch(`${API_URL}/livros`);
                 if (!response.ok) throw new Error('Erro ao carregar livros');
@@ -325,181 +137,105 @@
                 paginaAtual = 1;
                 renderizarTabelaLivros();
             } catch (error) {
-                console.error('Erro:', error);
-                document.getElementById('tabelaLivros').innerHTML = '<tr><td colspan="6" style="text-align: center; color: red;">❌ Erro ao conectar com o servidor</td></tr>';
+                livrosContainer.tabela.innerHTML = '<tr><td colspan="6" style="text-align: center; color: red;">❌ Erro ao conectar</td></tr>';
+                console.error(error);
             }
         }
 
         function renderizarTabelaLivros() {
-            const tbody = document.getElementById('tabelaLivros');
-            tbody.innerHTML = '';
-            
+            if (!livrosContainer.tabela) return;
+            livrosContainer.tabela.innerHTML = '';
             atualizarPaginacao();
-            
             const inicio = (paginaAtual - 1) * itensPorPagina;
-            const fim = inicio + itensPorPagina;
-            const livrosPagina = livrosFiltrados.slice(inicio, fim);
-            
-            if (livrosPagina.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Nenhum livro encontrado</td></tr>';
-                return;
-            }
-            
-            livrosPagina.forEach(livro => {
-                const row = tbody.insertRow();
-                row.innerHTML = `
-                    <td style="padding: 0.75rem; border-bottom: 1px solid #ddd;">${livro.id}</td>
-                    <td style="padding: 0.75rem; border-bottom: 1px solid #ddd;">${livro.titulo}</td>
-                    <td style="padding: 0.75rem; border-bottom: 1px solid #ddd;">${livro.autor}</td>
-                    <td style="padding: 0.75rem; border-bottom: 1px solid #ddd;">${livro.isbn}</td>
-                    <td style="padding: 0.75rem; border-bottom: 1px solid #ddd;">${livro.disponivel ? '✅ Disponível' : '❌ Indisponível'}</td>
-                    <td style="padding: 0.75rem; border-bottom: 1px solid #ddd;">
-                        <button class="btn-edit" onclick="editarLivro(${livro.id})">✏️</button>
-                        <button class="btn-delete" onclick="deletarLivro(${livro.id})">🗑️</button>
-                    </td>
-                `;
+            const pagina = livrosFiltrados.slice(inicio, inicio + itensPorPagina);
+            if (pagina.length === 0) { livrosContainer.tabela.innerHTML = '<tr><td colspan="6">Nenhum livro encontrado</td></tr>'; return; }
+
+            const frag = document.createDocumentFragment();
+            pagina.forEach(livro => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="padding: 0.75rem;">${livro.id}</td>
+                    <td style="padding: 0.75rem;">${livro.titulo}</td>
+                    <td style="padding: 0.75rem;">${livro.autor}</td>
+                    <td style="padding: 0.75rem;">${livro.isbn}</td>
+                    <td style="padding: 0.75rem;">${livro.disponivel ? '✅ Disponível' : '❌ Indisponível'}</td>
+                    <td style="padding: 0.75rem;">
+                        <button class="btn-edit" type="button" onclick="editarLivro(${livro.id})">✏️</button>
+                        <button class="btn-delete" type="button" onclick="deletarLivro(${livro.id})">🗑️</button>
+                    </td>`;
+                frag.appendChild(tr);
             });
+            livrosContainer.tabela.appendChild(frag);
         }
 
         function filtrarLivros() {
-            const busca = document.getElementById('buscaLivro').value.toLowerCase();
-            
-            if (busca === '') {
-                livrosFiltrados = [...livros];
-            } else {
-                livrosFiltrados = livros.filter(livro => 
-                    livro.titulo.toLowerCase().includes(busca) ||
-                    livro.autor.toLowerCase().includes(busca) ||
-                    livro.isbn.includes(busca)
-                );
-            }
-            
+            const busca = (livrosContainer.busca?.value || '').trim().toLowerCase();
+            livrosFiltrados = busca ? livros.filter(l => l.titulo.toLowerCase().includes(busca) || l.autor.toLowerCase().includes(busca) || l.isbn.includes(busca)) : [...livros];
             paginaAtual = 1;
             renderizarTabelaLivros();
         }
 
         function abrirModalCadastro() {
             editandoId = null;
-            document.getElementById('modalTitulo').innerText = '📖 Novo Livro';
-            document.getElementById('livroId').value = '';
-            document.getElementById('titulo').value = '';
-            document.getElementById('autor').value = '';
-            document.getElementById('isbn').value = '';
-            document.getElementById('status').value = 'disponivel';
-            document.getElementById('modalLivro').style.display = 'flex';
+            if (!livrosContainer.modal) return;
+            livrosContainer.modalTitulo.textContent = '📖 Novo Livro';
+            livrosContainer.livroId.value = '';
+            livrosContainer.titulo.value = '';
+            livrosContainer.autor.value = '';
+            livrosContainer.isbn.value = '';
+            livrosContainer.status.value = 'disponivel';
+            livrosContainer.modal.style.display = 'flex';
         }
 
         function editarLivro(id) {
             const livro = livros.find(l => l.id === id);
-            if (livro) {
-                editandoId = id;
-                document.getElementById('modalTitulo').innerText = '✏️ Editar Livro';
-                document.getElementById('livroId').value = livro.id;
-                document.getElementById('titulo').value = livro.titulo;
-                document.getElementById('autor').value = livro.autor;
-                document.getElementById('isbn').value = livro.isbn;
-                document.getElementById('status').value = livro.disponivel ? 'disponivel' : 'indisponivel';
-                document.getElementById('modalLivro').style.display = 'flex';
-            }
+            if (!livro || !livrosContainer.modal) return;
+            editandoId = id;
+            livrosContainer.modalTitulo.textContent = '✏️ Editar Livro';
+            livrosContainer.livroId.value = livro.id;
+            livrosContainer.titulo.value = livro.titulo;
+            livrosContainer.autor.value = livro.autor;
+            livrosContainer.isbn.value = livro.isbn;
+            livrosContainer.status.value = livro.disponivel ? 'disponivel' : 'indisponivel';
+            livrosContainer.modal.style.display = 'flex';
         }
 
+        function fecharModal() { if (livrosContainer.modal) livrosContainer.modal.style.display = 'none'; }
+
         async function salvarLivro() {
-            const titulo = document.getElementById('titulo').value.trim();
-            const autor = document.getElementById('autor').value.trim();
-            const isbn = document.getElementById('isbn').value.trim();
-            const status = document.getElementById('status').value;
-
-            if (!titulo) {
-                alert('❌ O campo Título é obrigatório!');
-                document.getElementById('titulo').focus();
-                return;
-            }
-            
-            if (!autor) {
-                alert('❌ O campo Autor é obrigatório!');
-                document.getElementById('autor').focus();
-                return;
-            }
-            
-            if (!isbn) {
-                alert('❌ O campo ISBN é obrigatório!');
-                document.getElementById('isbn').focus();
-                return;
-            }
-
-            const livro = {
-                titulo: titulo,
-                autor: autor,
-                isbn: isbn,
-                disponivel: status === 'disponivel'
-            };
-
-            mostrarLoading();
-            
+            const titulo = livrosContainer.titulo.value.trim();
+            const autor = livrosContainer.autor.value.trim();
+            const isbn = livrosContainer.isbn.value.trim();
+            const status = livrosContainer.status.value;
+            if (!titulo || !autor || !isbn) { showToast('error', null, '❌ Preencha todos os campos!'); return; }
+            const livro = { titulo, autor, isbn, disponivel: status === 'disponivel' };
             try {
-                let response;
-                if (editandoId) {
-                    response = await fetch(`${API_URL}/livros/${editandoId}`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(livro)
-                    });
-                } else {
-                    response = await fetch(`${API_URL}/livros`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(livro)
-                    });
-                }
-
-                esconderLoading();
-
-                if (response.ok) {
-                    alert(editandoId ? '✅ Livro atualizado!' : '✅ Livro cadastrado!');
-                    fecharModal();
-                    carregarLivros();
-                } else {
-                    alert('❌ Erro ao salvar livro');
-                }
-            } catch (error) {
-                esconderLoading();
-                console.error('Erro:', error);
-                alert('❌ Erro de conexão');
-            }
+                const url = editandoId ? `${API_URL}/livros/${editandoId}` : `${API_URL}/livros`;
+                const method = editandoId ? 'PUT' : 'POST';
+                const response = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(livro) });
+                if (!response.ok) throw new Error('Erro ao salvar');
+                showToast('success', null, editandoId ? '✅ Livro atualizado!' : '✅ Livro cadastrado!');
+                fecharModal();
+                carregarLivros();
+            } catch (error) { showToast('error', null, '❌ Erro de conexão'); console.error(error); }
         }
 
         async function deletarLivro(id) {
-            if (confirm('⚠️ Tem certeza que deseja excluir este livro?')) {
-                mostrarLoading();
-                try {
-                    const response = await fetch(`${API_URL}/livros/${id}`, { method: 'DELETE' });
-                    esconderLoading();
-                    if (response.ok) {
-                        alert('✅ Livro excluído!');
-                        carregarLivros();
-                    } else {
-                        alert('❌ Erro ao excluir');
-                    }
-                } catch (error) {
-                    esconderLoading();
-                    alert('❌ Erro de conexão');
-                }
-            }
-        }
-
-        function fecharModal() {
-            document.getElementById('modalLivro').style.display = 'none';
+            if (!(await showConfirm('⚠️ Tem certeza?'))) return;
+            try {
+                const response = await fetch(`${API_URL}/livros/${id}`, { method: 'DELETE' });
+                if (!response.ok) throw new Error('Erro ao excluir');
+                showToast('success', null, '✅ Livro excluído!');
+                carregarLivros();
+            } catch (error) { showToast('error', null, '❌ Erro de conexão'); console.error(error); }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            checkAuth();
+            initTheme();
             carregarLivros();
-            
-            window.onclick = function(event) {
-                const modal = document.getElementById('modalLivro');
-                if (event.target === modal) {
-                    fecharModal();
-                }
-            };
+            if (livrosContainer.busca) livrosContainer.busca.addEventListener('keyup', filtrarLivros);
+            window.addEventListener('click', e => { if (e.target === livrosContainer.modal) fecharModal(); });
         });
     </script>
 </body>

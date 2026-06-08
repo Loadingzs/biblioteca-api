@@ -59,31 +59,7 @@ Sistema completo de gerenciamento de biblioteca desenvolvido como **Projeto Inte
 | GitHub | Hospedagem do código |
 | NetBeans | IDE de desenvolvimento |
 
----
 
-## 📁 Estrutura do Projeto
-biblioteca-api/
-├── src/main/java/com/biblioteca/api/
-│ ├── controller/ # REST Controllers (API endpoints)
-│ ├── domain/ # Entidades (Livro, Usuario, Emprestimo)
-│ ├── service/ # Regras de negócio
-│ ├── repository/ # Acesso a dados (JDBC)
-│ ├── infrastructure/ # Conexão com banco
-│ └── config/ # Configurações (CORS)
-├── src/main/resources/
-│ ├── application.properties # Configurações do Spring
-│ └── static/ # Front-end integrado
-│ ├── index.html
-│ ├── login.html
-│ ├── livros.html
-│ ├── usuarios.html
-│ ├── emprestimos.html
-│ ├── relatorios.html
-│ ├── css/style.css
-│ └── js/scripts.js
-└── pom.xml # Dependências Maven
-
-text
 
 ---
 

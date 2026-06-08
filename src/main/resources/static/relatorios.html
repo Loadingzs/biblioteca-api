@@ -18,11 +18,19 @@
             border-radius: 15px;
             padding: 1.5rem;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            transition: transform 0.3s;
+        }
+        
+        .card-relatorio:hover {
+            transform: translateY(-5px);
         }
         
         .card-relatorio h3 {
             color: #1a3c34;
             margin-bottom: 1rem;
+            border-bottom: 2px solid #2d6a4f;
+            display: inline-block;
+            padding-bottom: 0.5rem;
         }
         
         .card-relatorio .valor {
@@ -30,6 +38,12 @@
             font-weight: bold;
             color: #2d6a4f;
             margin: 1rem 0;
+        }
+        
+        .card-relatorio .detalhe {
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
         }
         
         .btn-relatorio {
@@ -40,6 +54,73 @@
             border-radius: 8px;
             cursor: pointer;
             margin-top: 1rem;
+            transition: background 0.3s;
+        }
+        
+        .btn-relatorio:hover {
+            background: #2d6a4f;
+        }
+        
+        .tabela-container {
+            margin-top: 2rem;
+        }
+        
+        .tabela-container h3 {
+            color: #1a3c34;
+            margin-bottom: 1rem;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+        
+        .status-atrasado {
+            color: #e63946;
+            font-weight: bold;
+        }
+        
+        .loading-spinner {
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #2d6a4f;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .empty-message {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+        }
+        
+        .error-message {
+            text-align: center;
+            padding: 2rem;
+            color: #e63946;
         }
     </style>
 </head>
@@ -60,50 +141,46 @@
     </header>
 
     <main class="container">
-        <h2 style="margin-bottom: 1.5rem;">📊 Relatórios do Sistema</h2>
+        <h2 style="margin-bottom: 1.5rem; color: #1a3c34;">📊 Relatórios do Sistema</h2>
         
         <div class="relatorios-grid">
             <div class="card-relatorio">
                 <h3>📚 Livros por Status</h3>
                 <div class="valor" id="totalLivros">0</div>
-                <div id="detalheLivros"></div>
-                <button class="btn-relatorio" onclick="alertRelatorio('livros')">Ver detalhes</button>
+                <div id="detalheLivros" class="detalhe">✅ Disponíveis: -- | ❌ Indisponíveis: --</div>
+                <button class="btn-relatorio" onclick="exibirDetalhesLivros()">Ver detalhes</button>
             </div>
             
             <div class="card-relatorio">
                 <h3>👥 Usuários Cadastrados</h3>
                 <div class="valor" id="totalUsuarios">0</div>
-                <button class="btn-relatorio" onclick="alertRelatorio('usuarios')">Ver lista</button>
+                <div class="detalhe" id="detalheUsuarios">Total de leitores cadastrados</div>
+                <button class="btn-relatorio" onclick="exibirDetalhesUsuarios()">Ver lista</button>
             </div>
             
             <div class="card-relatorio">
-                <h3>🔄 Empréstimos Ativos</h3>
+                <h3>🔄 Empréstimos</h3>
                 <div class="valor" id="totalAtivos">0</div>
-                <div id="detalheAtrasados"></div>
-                <button class="btn-relatorio" onclick="alertRelatorio('emprestimos')">Ver detalhes</button>
+                <div id="detalheAtrasados" class="detalhe">🟢 Ativos: -- | 🔴 Atrasados: -- | ⚫ Finalizados: --</div>
+                <button class="btn-relatorio" onclick="exibirDetalhesEmprestimos()">Ver detalhes</button>
             </div>
             
             <div class="card-relatorio">
                 <h3>💰 Multas Pendentes</h3>
                 <div class="valor" id="totalMultas">R$ 0,00</div>
-                <button class="btn-relatorio" onclick="alertRelatorio('multas')">Calcular multas</button>
+                <div class="detalhe">Multa: R$ 2,00 por dia de atraso</div>
+                <button class="btn-relatorio" onclick="calcularMultas()">Calcular multas</button>
             </div>
         </div>
         
         <div class="tabela-container">
             <h3>📋 Relatório de Empréstimos Atrasados</h3>
-            <table style="margin-top: 1rem;">
-                <thead>
-                    <tr>
-                        <th>Usuário</th>
-                        <th>Livro</th>
-                        <th>Data Prevista</th>
-                        <th>Dias de Atraso</th>
-                        <th>Multa</th>
-                    </tr>
-                </thead>
-                <tbody id="tabelaAtrasados"></tbody>
-            </table>
+            <div id="tabelaAtrasadosContainer">
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                    <p>Carregando dados...</p>
+                </div>
+            </div>
         </div>
     </main>
     
@@ -111,123 +188,232 @@
         <p>&copy; <span id="anoAtual">2026</span> Sistema de Biblioteca Web - Todos os direitos reservados</p>
     </footer>
     
-    <script src="js/scripts.js"></script>
     <script>
+        const API_URL = 'http://localhost:8080/api';
         let livros = [];
         let usuarios = [];
         let emprestimos = [];
-        const API_URL = '/api';
-        
 
         async function carregarDados() {
+            console.log("Carregando dados...");
             try {
                 const [resLivros, resUsuarios, resEmprestimos] = await Promise.all([
                     fetch(`${API_URL}/livros`),
                     fetch(`${API_URL}/usuarios`),
                     fetch(`${API_URL}/emprestimos`)
                 ]);
+                
+                if (!resLivros.ok) throw new Error('Erro ao carregar livros');
+                if (!resUsuarios.ok) throw new Error('Erro ao carregar usuários');
+                if (!resEmprestimos.ok) throw new Error('Erro ao carregar empréstimos');
+                
                 livros = await resLivros.json();
                 usuarios = await resUsuarios.json();
                 emprestimos = await resEmprestimos.json();
-                atualizarRelatorios();
+                
+                console.log("Livros:", livros.length);
+                console.log("Usuários:", usuarios.length);
+                console.log("Empréstimos:", emprestimos.length);
+                
+                atualizarCards();
+                renderizarTabelaAtrasados();
             } catch (error) {
-                console.error('Erro:', error);
-                alert('❌ Erro ao carregar dados');
+                console.error('Erro ao carregar dados:', error);
+                document.getElementById('tabelaAtrasadosContainer').innerHTML = `<div class="error-message">❌ Erro ao conectar com o servidor. Verifique se o back-end está rodando.</div>`;
             }
         }
 
-        function atualizarRelatorios() {
+        function atualizarCards() {
+            // Total de Livros
             const totalLivros = livros.length;
-            const livrosDisponiveis = livros.filter(l => l.disponivel === true).length;
-            const livrosIndisponiveis = livros.filter(l => l.disponivel === false).length;
+            const disponiveis = livros.filter(l => l.disponivel === true).length;
+            const indisponiveis = totalLivros - disponiveis;
             
-            document.getElementById('totalLivros').innerText = totalLivros;
-            document.getElementById('detalheLivros').innerHTML = `
-                <small>✅ Disponíveis: ${livrosDisponiveis} | ❌ Indisponíveis: ${livrosIndisponiveis}</small>
-            `;
+            document.getElementById('totalLivros').innerHTML = totalLivros;
+            document.getElementById('detalheLivros').innerHTML = `✅ Disponíveis: ${disponiveis} | ❌ Indisponíveis: ${indisponiveis}`;
             
-            document.getElementById('totalUsuarios').innerText = usuarios.length;
+            // Total de Usuários
+            document.getElementById('totalUsuarios').innerHTML = usuarios.length;
             
-            const emprestimosAtivos = emprestimos.filter(e => e.status === 'ATIVO').length;
-            const emprestimosAtrasados = emprestimos.filter(e => e.status === 'ATRASADO').length;
+            // Empréstimos
+            const ativos = emprestimos.filter(e => e.status === 'ATIVO').length;
+            const atrasados = emprestimos.filter(e => e.status === 'ATRASADO').length;
+            const finalizados = emprestimos.filter(e => e.status === 'FINALIZADO').length;
             
-            document.getElementById('totalAtivos').innerText = emprestimosAtivos;
-            document.getElementById('detalheAtrasados').innerHTML = `<small>⚠️ Atrasados: ${emprestimosAtrasados}</small>`;
+            document.getElementById('totalAtivos').innerHTML = ativos;
+            document.getElementById('detalheAtrasados').innerHTML = `🟢 Ativos: ${ativos} | 🔴 Atrasados: ${atrasados} | ⚫ Finalizados: ${finalizados}`;
             
+            // Multas Pendentes
             let totalMultas = 0;
-            const tbody = document.getElementById('tabelaAtrasados');
-            tbody.innerHTML = '';
-            
             emprestimos.forEach(emp => {
-                if (emp.status === 'ATRASADO') {
-                    const usuario = usuarios.find(u => u.id === emp.usuarioId);
-                    const livro = livros.find(l => l.id === emp.livroId);
-                    
-                    const hoje = new Date();
+                if (emp.status === 'ATRASADO' && emp.dataDevolucaoPrevista) {
                     const dataPrevista = new Date(emp.dataDevolucaoPrevista);
-                    const diasAtraso = Math.max(0, Math.floor((hoje - dataPrevista) / (1000 * 60 * 60 * 24)));
-                    const multa = diasAtraso * 2;
-                    totalMultas += multa;
-                    
-                    const row = tbody.insertRow();
-                    row.innerHTML = `
-                        <td>${usuario?.nome || 'N/A'}</td>
-                        <td>${livro?.titulo || 'N/A'}</td>
-                        <td>${emp.dataDevolucaoPrevista}</td>
-                        <td>${diasAtraso}</td>
-                        <td>R$ ${multa.toFixed(2)}</td>
-                    `;
+                    const hoje = new Date();
+                    if (hoje > dataPrevista) {
+                        const diasAtraso = Math.floor((hoje - dataPrevista) / (1000 * 60 * 60 * 24));
+                        totalMultas += diasAtraso * 2;
+                    }
                 }
             });
-            
             document.getElementById('totalMultas').innerHTML = `R$ ${totalMultas.toFixed(2)}`;
         }
 
-        function alertRelatorio(tipo) {
-            switch(tipo) {
-                case 'livros':
-                    let msg = "📚 LIVROS CADASTRADOS:\n\n";
-                    livros.forEach(l => {
-                        msg += `📖 ${l.titulo} - ${l.autor} (${l.disponivel ? 'Disponível' : 'Indisponível'})\n`;
-                    });
-                    alert(msg);
-                    break;
-                case 'usuarios':
-                    let msgUser = "👥 USUÁRIOS CADASTRADOS:\n\n";
-                    usuarios.forEach(u => {
-                        msgUser += `👤 ${u.nome} - ${u.email}\n`;
-                    });
-                    alert(msgUser);
-                    break;
-                case 'emprestimos':
-                    let msgEmp = "🔄 EMPRÉSTIMOS ATIVOS:\n\n";
-                    emprestimos.filter(e => e.status === 'ATIVO').forEach(e => {
-                        const usuario = usuarios.find(u => u.id === e.usuarioId);
-                        const livro = livros.find(l => l.id === e.livroId);
-                        msgEmp += `📖 ${livro?.titulo} → ${usuario?.nome} (Devolução: ${e.dataDevolucaoPrevista})\n`;
-                    });
-                    alert(msgEmp);
-                    break;
-                case 'multas':
-                    let multaTotal = 0;
-                    let msgMulta = "💰 MULTAS PENDENTES:\n\n";
-                    emprestimos.filter(e => e.status === 'ATRASADO').forEach(e => {
-                        const usuario = usuarios.find(u => u.id === e.usuarioId);
-                        const livro = livros.find(l => l.id === e.livroId);
-                        const hoje = new Date();
-                        const dataPrevista = new Date(e.dataDevolucaoPrevista);
-                        const dias = Math.max(0, Math.floor((hoje - dataPrevista) / (1000 * 60 * 60 * 24)));
-                        const multa = dias * 2;
-                        multaTotal += multa;
-                        msgMulta += `👤 ${usuario?.nome} - 📖 ${livro?.titulo}\n   Atraso: ${dias} dias | Multa: R$ ${multa.toFixed(2)}\n\n`;
-                    });
-                    msgMulta += `\n💰 TOTAL DE MULTAS: R$ ${multaTotal.toFixed(2)}`;
-                    alert(msgMulta);
-                    break;
+        function renderizarTabelaAtrasados() {
+            const container = document.getElementById('tabelaAtrasadosContainer');
+            
+            const emprestimosAtrasados = emprestimos.filter(e => e.status === 'ATRASADO');
+            
+            if (emprestimosAtrasados.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-message">
+                        ✅ Nenhum empréstimo atrasado no momento!
+                    </div>
+                `;
+                return;
             }
+            
+            let html = `
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: #f8f9fa;">
+                                <th style="padding: 0.75rem;">Usuário</th>
+                                <th style="padding: 0.75rem;">Livro</th>
+                                <th style="padding: 0.75rem;">Data Prevista</th>
+                                <th style="padding: 0.75rem;">Dias de Atraso</th>
+                                <th style="padding: 0.75rem;">Multa</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            let totalMultas = 0;
+            
+            emprestimosAtrasados.forEach(emp => {
+                const usuario = usuarios.find(u => u.id === emp.usuarioId);
+                const livro = livros.find(l => l.id === emp.livroId);
+                
+                const dataPrevista = new Date(emp.dataDevolucaoPrevista);
+                const hoje = new Date();
+                const diasAtraso = Math.floor((hoje - dataPrevista) / (1000 * 60 * 60 * 24));
+                const multa = diasAtraso * 2;
+                totalMultas += multa;
+                
+                html += `
+                    <tr>
+                        <td style="padding: 0.75rem; border-bottom: 1px solid #ddd;">${usuario?.nome || 'N/A'}</td>
+                        <td style="padding: 0.75rem; border-bottom: 1px solid #ddd;">${livro?.titulo || 'N/A'}</td>
+                        <td style="padding: 0.75rem; border-bottom: 1px solid #ddd;">${emp.dataDevolucaoPrevista || '-'}</td>
+                        <td style="padding: 0.75rem; border-bottom: 1px solid #ddd; color: #e63946; font-weight: bold;">${diasAtraso} dias</td>
+                        <td style="padding: 0.75rem; border-bottom: 1px solid #ddd; color: #e63946; font-weight: bold;">R$ ${multa.toFixed(2)}</td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+                <div style="margin-top: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; text-align: right; font-weight: bold;">
+                    Total de multas pendentes: R$ ${totalMultas.toFixed(2)}
+                </div>
+            `;
+            
+            container.innerHTML = html;
         }
 
-        document.addEventListener('DOMContentLoaded', carregarDados);
+        function exibirDetalhesLivros() {
+            if (livros.length === 0) {
+                alert("Nenhum livro cadastrado ainda.");
+                return;
+            }
+            let msg = "📚 LIVROS CADASTRADOS:\n\n";
+            livros.forEach(l => {
+                msg += `📖 ${l.titulo}\n   Autor: ${l.autor}\n   Status: ${l.disponivel ? '✅ Disponível' : '❌ Indisponível'}\n   ISBN: ${l.isbn}\n\n`;
+            });
+            alert(msg);
+        }
+
+        function exibirDetalhesUsuarios() {
+            if (usuarios.length === 0) {
+                alert("Nenhum usuário cadastrado ainda.");
+                return;
+            }
+            let msg = "👥 USUÁRIOS CADASTRADOS:\n\n";
+            usuarios.forEach(u => {
+                const qtdEmprestimos = emprestimos.filter(e => e.usuarioId === u.id).length;
+                msg += `👤 ${u.nome}\n   📧 ${u.email}\n   📞 ${u.telefone}\n   📚 Empréstimos: ${qtdEmprestimos}\n\n`;
+            });
+            alert(msg);
+        }
+
+        function exibirDetalhesEmprestimos() {
+            if (emprestimos.length === 0) {
+                alert("Nenhum empréstimo registrado ainda.");
+                return;
+            }
+            const ativos = emprestimos.filter(e => e.status === 'ATIVO');
+            const atrasados = emprestimos.filter(e => e.status === 'ATRASADO');
+            const finalizados = emprestimos.filter(e => e.status === 'FINALIZADO');
+            
+            let msg = "🔄 RESUMO DE EMPRÉSTIMOS:\n\n";
+            msg += `📊 Total de empréstimos: ${emprestimos.length}\n`;
+            msg += `🟢 Ativos: ${ativos.length}\n`;
+            msg += `🔴 Atrasados: ${atrasados.length}\n`;
+            msg += `⚫ Finalizados: ${finalizados.length}\n\n`;
+            
+            if (ativos.length > 0) {
+                msg += "📖 EMPRÉSTIMOS ATIVOS:\n";
+                ativos.forEach(e => {
+                    const usuario = usuarios.find(u => u.id === e.usuarioId);
+                    const livro = livros.find(l => l.id === e.livroId);
+                    msg += `   • ${usuario?.nome || 'N/A'} → "${livro?.titulo || 'N/A'}"\n`;
+                });
+            }
+            
+            alert(msg);
+        }
+
+        function calcularMultas() {
+            const atrasados = emprestimos.filter(e => e.status === 'ATRASADO');
+            
+            if (atrasados.length === 0) {
+                alert("✅ Não há multas pendentes no momento!");
+                return;
+            }
+            
+            let totalMultas = 0;
+            let msg = "💰 RELATÓRIO DE MULTAS:\n\n";
+            
+            atrasados.forEach(emp => {
+                const usuario = usuarios.find(u => u.id === emp.usuarioId);
+                const livro = livros.find(l => l.id === emp.livroId);
+                const dataPrevista = new Date(emp.dataDevolucaoPrevista);
+                const hoje = new Date();
+                const diasAtraso = Math.floor((hoje - dataPrevista) / (1000 * 60 * 60 * 24));
+                const multa = diasAtraso * 2;
+                totalMultas += multa;
+                
+                msg += `👤 ${usuario?.nome || 'N/A'}\n`;
+                msg += `   📖 Livro: ${livro?.titulo || 'N/A'}\n`;
+                msg += `   📅 Devolução prevista: ${emp.dataDevolucaoPrevista}\n`;
+                msg += `   ⏰ Dias de atraso: ${diasAtraso}\n`;
+                msg += `   💰 Multa: R$ ${multa.toFixed(2)}\n\n`;
+            });
+            
+            msg += `━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+            msg += `💰 TOTAL DE MULTAS: R$ ${totalMultas.toFixed(2)}`;
+            alert(msg);
+        }
+
+        // Atualizar ano no rodapé
+        document.getElementById('anoAtual').innerText = new Date().getFullYear();
+        
+        // Carregar dados ao iniciar
+        carregarDados();
+        
+        // Recarregar a cada 30 segundos (opcional)
+        // setInterval(carregarDados, 30000);
     </script>
 </body>
 </html>

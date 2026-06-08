@@ -130,10 +130,50 @@
             background: #6c757d;
             color: white;
         }
-        
-        .status-ativo { color: #2d6a4f; font-weight: bold; }
-        .status-atrasado { color: #e63946; font-weight: bold; }
-        .status-devolvido { color: #6c757d; }
+
+        /* Paginação */
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .pagination-controls {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .pagination-btn {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            background: #2d6a4f;
+            color: white;
+            border-color: #2d6a4f;
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination-info {
+            color: #666;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
@@ -179,6 +219,18 @@
                     <tr><td colspan="6" style="text-align: center;">Carregando livros...</td></tr>
                 </tbody>
             </table>
+            
+            <!-- PAGINAÇÃO -->
+            <div class="pagination-container" id="paginationContainer">
+                <div class="pagination-info" id="paginationInfo">
+                    Mostrando 0 de 0 registros
+                </div>
+                <div class="pagination-controls">
+                    <button class="pagination-btn" id="btnAnterior" onclick="paginaAnterior()">◀ Anterior</button>
+                    <span id="paginaAtual">Página 1</span>
+                    <button class="pagination-btn" id="btnProximo" onclick="paginaProxima()">Próximo ▶</button>
+                </div>
+            </div>
         </div>
     </main>
     
@@ -207,9 +259,40 @@
     
     <script src="js/scripts.js"></script>
     <script>
-        // NÃO DECLARAR API_URL AQUI! (já está no scripts.js)
         let livros = [];
+        let livrosFiltrados = [];
         let editandoId = null;
+        
+        // PAGINAÇÃO
+        let paginaAtual = 1;
+        let itensPorPagina = 5;
+        let totalPaginas = 1;
+
+        function atualizarPaginacao() {
+            totalPaginas = Math.ceil(livrosFiltrados.length / itensPorPagina);
+            if (totalPaginas === 0) totalPaginas = 1;
+            if (paginaAtual > totalPaginas) paginaAtual = totalPaginas;
+            
+            document.getElementById('paginacaoInfo').innerHTML = `Mostrando ${Math.min(itensPorPagina, livrosFiltrados.length)} de ${livrosFiltrados.length} registros`;
+            document.getElementById('paginaAtual').innerHTML = `Página ${paginaAtual} de ${totalPaginas}`;
+            
+            document.getElementById('btnAnterior').disabled = (paginaAtual <= 1);
+            document.getElementById('btnProximo').disabled = (paginaAtual >= totalPaginas);
+        }
+
+        function paginaAnterior() {
+            if (paginaAtual > 1) {
+                paginaAtual--;
+                renderizarTabelaLivros();
+            }
+        }
+
+        function paginaProxima() {
+            if (paginaAtual < totalPaginas) {
+                paginaAtual++;
+                renderizarTabelaLivros();
+            }
+        }
 
         // ===== CARREGAR LIVROS =====
         async function carregarLivros() {
@@ -217,6 +300,8 @@
                 const response = await fetch(`${API_URL}/livros`);
                 if (!response.ok) throw new Error('Erro ao carregar livros');
                 livros = await response.json();
+                livrosFiltrados = [...livros];
+                paginaAtual = 1;
                 renderizarTabelaLivros();
             } catch (error) {
                 console.error('Erro:', error);
@@ -224,17 +309,23 @@
             }
         }
 
-        // ===== RENDERIZAR TABELA =====
+        // ===== RENDERIZAR TABELA COM PAGINAÇÃO =====
         function renderizarTabelaLivros() {
             const tbody = document.getElementById('tabelaLivros');
             tbody.innerHTML = '';
             
-            if (livros.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Nenhum livro cadastrado</td></tr>';
+            atualizarPaginacao();
+            
+            const inicio = (paginaAtual - 1) * itensPorPagina;
+            const fim = inicio + itensPorPagina;
+            const livrosPagina = livrosFiltrados.slice(inicio, fim);
+            
+            if (livrosPagina.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Nenhum livro encontrado</td></tr>';
                 return;
             }
             
-            livros.forEach(livro => {
+            livrosPagina.forEach(livro => {
                 const row = tbody.insertRow();
                 row.innerHTML = `
                     <td style="padding: 0.75rem; border-bottom: 1px solid #ddd;">${livro.id}</td>
@@ -253,39 +344,23 @@
         // ===== FILTRAR LIVROS =====
         function filtrarLivros() {
             const busca = document.getElementById('buscaLivro').value.toLowerCase();
-            const tbody = document.getElementById('tabelaLivros');
-            tbody.innerHTML = '';
             
-            const filtrados = livros.filter(livro => 
-                livro.titulo.toLowerCase().includes(busca) ||
-                livro.autor.toLowerCase().includes(busca) ||
-                livro.isbn.includes(busca)
-            );
-            
-            if (filtrados.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Nenhum livro encontrado</td></tr>';
-                return;
+            if (busca === '') {
+                livrosFiltrados = [...livros];
+            } else {
+                livrosFiltrados = livros.filter(livro => 
+                    livro.titulo.toLowerCase().includes(busca) ||
+                    livro.autor.toLowerCase().includes(busca) ||
+                    livro.isbn.includes(busca)
+                );
             }
             
-            filtrados.forEach(livro => {
-                const row = tbody.insertRow();
-                row.innerHTML = `
-                    <td style="padding: 0.75rem; border-bottom: 1px solid #ddd;">${livro.id}</td>
-                    <td style="padding: 0.75rem; border-bottom: 1px solid #ddd;">${livro.titulo}</td>
-                    <td style="padding: 0.75rem; border-bottom: 1px solid #ddd;">${livro.autor}</td>
-                    <td style="padding: 0.75rem; border-bottom: 1px solid #ddd;">${livro.isbn}</td>
-                    <td style="padding: 0.75rem; border-bottom: 1px solid #ddd;">${livro.disponivel ? '✅ Disponível' : '❌ Indisponível'}</td>
-                    <td style="padding: 0.75rem; border-bottom: 1px solid #ddd;">
-                        <button class="btn-edit" onclick="editarLivro(${livro.id})">✏️</button>
-                        <button class="btn-delete" onclick="deletarLivro(${livro.id})">🗑️</button>
-                    </td>
-                `;
-            });
+            paginaAtual = 1;
+            renderizarTabelaLivros();
         }
 
         // ===== ABRIR MODAL =====
         function abrirModalCadastro() {
-            console.log("Abrindo modal");
             editandoId = null;
             document.getElementById('modalTitulo').innerText = '📖 Novo Livro';
             document.getElementById('livroId').value = '';
@@ -396,7 +471,6 @@
 
         // ===== INICIALIZAR =====
         document.addEventListener('DOMContentLoaded', () => {
-            console.log("Página de livros carregada");
             carregarLivros();
             
             window.onclick = function(event) {

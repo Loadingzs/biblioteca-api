@@ -24,6 +24,11 @@
             padding: 0.7rem 1.5rem;
             border-radius: 8px;
             cursor: pointer;
+            font-size: 1rem;
+        }
+        
+        .btn-primary:hover {
+            background: #1a3c34;
         }
         
         .btn-edit {
@@ -56,6 +61,15 @@
             padding: 0.7rem;
             border: 1px solid #ddd;
             border-radius: 8px;
+        }
+        
+        .search-bar button {
+            background: #1a3c34;
+            color: white;
+            border: none;
+            padding: 0.7rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
         }
         
         .modal {
@@ -110,6 +124,50 @@
             border-radius: 8px;
             cursor: pointer;
         }
+
+        /* Paginação */
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .pagination-controls {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .pagination-btn {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            background: #2d6a4f;
+            color: white;
+            border-color: #2d6a4f;
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination-info {
+            color: #666;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
@@ -140,20 +198,32 @@
         </div>
         
         <div class="tabela-container">
-            <table>
+            <table style="width: 100%; border-collapse: collapse;">
                 <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Nome</th>
-                        <th>Email</th>
-                        <th>Telefone</th>
-                        <th>Ações</th>
+                    <tr style="background: #f8f9fa;">
+                        <th style="padding: 0.75rem; text-align: left;">ID</th>
+                        <th style="padding: 0.75rem; text-align: left;">Nome</th>
+                        <th style="padding: 0.75rem; text-align: left;">Email</th>
+                        <th style="padding: 0.75rem; text-align: left;">Telefone</th>
+                        <th style="padding: 0.75rem; text-align: left;">Ações</th>
                     </tr>
                 </thead>
                 <tbody id="tabelaUsuarios">
-                    <!-- Dados preenchidos pelo JavaScript -->
+                    <tr><td colspan="5" style="text-align: center;">Carregando usuários...</td></tr>
                 </tbody>
             </table>
+            
+            <!-- PAGINAÇÃO -->
+            <div class="pagination-container" id="paginationContainer">
+                <div class="pagination-info" id="paginationInfo">
+                    Mostrando 0 de 0 registros
+                </div>
+                <div class="pagination-controls">
+                    <button class="pagination-btn" id="btnAnterior" onclick="paginaAnterior()">◀ Anterior</button>
+                    <span id="paginaAtual">Página 1</span>
+                    <button class="pagination-btn" id="btnProximo" onclick="paginaProxima()">Próximo ▶</button>
+                </div>
+            </div>
         </div>
     </main>
     
@@ -178,32 +248,79 @@
     <script src="js/scripts.js"></script>
     <script>
         let usuarios = [];
+        let usuariosFiltrados = [];
         let editandoUsuarioId = null;
-        const API_URL = '/api';
+        
+        // PAGINAÇÃO
+        let paginaAtual = 1;
+        let itensPorPagina = 5;
+        let totalPaginas = 1;
 
-        async function carregarUsuarios() {
-            try {
-                const response = await fetch(`${API_URL}/usuarios`);
-                usuarios = await response.json();
+        function atualizarPaginacao() {
+            totalPaginas = Math.ceil(usuariosFiltrados.length / itensPorPagina);
+            if (totalPaginas === 0) totalPaginas = 1;
+            if (paginaAtual > totalPaginas) paginaAtual = totalPaginas;
+            
+            document.getElementById('paginationInfo').innerHTML = `Mostrando ${Math.min(itensPorPagina, usuariosFiltrados.length)} de ${usuariosFiltrados.length} registros`;
+            document.getElementById('paginaAtual').innerHTML = `Página ${paginaAtual} de ${totalPaginas}`;
+            
+            document.getElementById('btnAnterior').disabled = (paginaAtual <= 1);
+            document.getElementById('btnProximo').disabled = (paginaAtual >= totalPaginas);
+        }
+
+        function paginaAnterior() {
+            if (paginaAtual > 1) {
+                paginaAtual--;
                 renderizarTabelaUsuarios();
-            } catch (error) {
-                console.error('Erro:', error);
-                alert('❌ Erro ao conectar com o servidor.');
             }
         }
 
+        function paginaProxima() {
+            if (paginaAtual < totalPaginas) {
+                paginaAtual++;
+                renderizarTabelaUsuarios();
+            }
+        }
+
+        // ===== CARREGAR USUÁRIOS =====
+        async function carregarUsuarios() {
+            try {
+                const response = await fetch(`${API_URL}/usuarios`);
+                if (!response.ok) throw new Error('Erro ao carregar usuários');
+                usuarios = await response.json();
+                usuariosFiltrados = [...usuarios];
+                paginaAtual = 1;
+                renderizarTabelaUsuarios();
+            } catch (error) {
+                console.error('Erro:', error);
+                document.getElementById('tabelaUsuarios').innerHTML = '<tr><td colspan="5" style="text-align: center; color: red;">❌ Erro ao conectar com o servidor</td></tr>';
+            }
+        }
+
+        // ===== RENDERIZAR TABELA COM PAGINAÇÃO =====
         function renderizarTabelaUsuarios() {
             const tbody = document.getElementById('tabelaUsuarios');
             tbody.innerHTML = '';
             
-            usuarios.forEach(usuario => {
+            atualizarPaginacao();
+            
+            const inicio = (paginaAtual - 1) * itensPorPagina;
+            const fim = inicio + itensPorPagina;
+            const usuariosPagina = usuariosFiltrados.slice(inicio, fim);
+            
+            if (usuariosPagina.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhum usuário encontrado</td></tr>';
+                return;
+            }
+            
+            usuariosPagina.forEach(usuario => {
                 const row = tbody.insertRow();
                 row.innerHTML = `
-                    <td>${usuario.id}</td>
-                    <td>${usuario.nome}</td>
-                    <td>${usuario.email}</td>
-                    <td>${usuario.telefone}</td>
-                    <td>
+                    <td style="padding: 0.75rem; border-bottom: 1px solid #ddd;">${usuario.id}</td>
+                    <td style="padding: 0.75rem; border-bottom: 1px solid #ddd;">${usuario.nome}</td>
+                    <td style="padding: 0.75rem; border-bottom: 1px solid #ddd;">${usuario.email}</td>
+                    <td style="padding: 0.75rem; border-bottom: 1px solid #ddd;">${usuario.telefone}</td>
+                    <td style="padding: 0.75rem; border-bottom: 1px solid #ddd;">
                         <button class="btn-edit" onclick="editarUsuario(${usuario.id})">✏️</button>
                         <button class="btn-delete" onclick="deletarUsuario(${usuario.id})">🗑️</button>
                     </td>
@@ -211,30 +328,24 @@
             });
         }
 
+        // ===== FILTRAR USUÁRIOS =====
         function filtrarUsuarios() {
             const busca = document.getElementById('buscaUsuario').value.toLowerCase();
-            const tbody = document.getElementById('tabelaUsuarios');
-            tbody.innerHTML = '';
             
-            const filtrados = usuarios.filter(u => 
-                u.nome.toLowerCase().includes(busca) || u.email.toLowerCase().includes(busca)
-            );
+            if (busca === '') {
+                usuariosFiltrados = [...usuarios];
+            } else {
+                usuariosFiltrados = usuarios.filter(usuario => 
+                    usuario.nome.toLowerCase().includes(busca) ||
+                    usuario.email.toLowerCase().includes(busca)
+                );
+            }
             
-            filtrados.forEach(usuario => {
-                const row = tbody.insertRow();
-                row.innerHTML = `
-                    <td>${usuario.id}</td>
-                    <td>${usuario.nome}</td>
-                    <td>${usuario.email}</td>
-                    <td>${usuario.telefone}</td>
-                    <td>
-                        <button class="btn-edit" onclick="editarUsuario(${usuario.id})">✏️</button>
-                        <button class="btn-delete" onclick="deletarUsuario(${usuario.id})">🗑️</button>
-                    </td>
-                `;
-            });
+            paginaAtual = 1;
+            renderizarTabelaUsuarios();
         }
 
+        // ===== ABRIR MODAL =====
         function abrirModalCadastro() {
             editandoUsuarioId = null;
             document.getElementById('modalTitulo').innerText = '👤 Novo Usuário';
@@ -245,6 +356,7 @@
             document.getElementById('modalUsuario').style.display = 'flex';
         }
 
+        // ===== EDITAR USUÁRIO =====
         function editarUsuario(id) {
             const usuario = usuarios.find(u => u.id === id);
             if (usuario) {
@@ -258,12 +370,12 @@
             }
         }
 
-            async function salvarUsuario() {
+        // ===== SALVAR USUÁRIO =====
+        async function salvarUsuario() {
             const nome = document.getElementById('nome').value.trim();
             const email = document.getElementById('email').value.trim();
             const telefone = document.getElementById('telefone').value.trim();
 
-            // ===== VALIDAÇÕES =====
             if (!nome) {
                 alert('❌ O campo Nome é obrigatório!');
                 document.getElementById('nome').focus();
@@ -276,7 +388,6 @@
                 return;
             }
             
-            // Validação de formato de email
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(email)) {
                 alert('❌ E-mail inválido! Use o formato: nome@dominio.com');
@@ -309,28 +420,28 @@
                 }
 
                 if (response.ok) {
-                    alert(editandoUsuarioId ? '✅ Usuário atualizado com sucesso!' : '✅ Usuário cadastrado com sucesso!');
+                    alert(editandoUsuarioId ? '✅ Usuário atualizado!' : '✅ Usuário cadastrado!');
                     fecharModal();
                     carregarUsuarios();
                 } else {
-                    const erro = await response.text();
-                    alert('❌ Erro ao salvar usuário: ' + erro);
+                    alert('❌ Erro ao salvar usuário');
                 }
             } catch (error) {
                 console.error('Erro:', error);
-                alert('❌ Erro de conexão com o servidor. Verifique se o back-end está rodando.');
+                alert('❌ Erro de conexão');
             }
         }
 
+        // ===== DELETAR USUÁRIO =====
         async function deletarUsuario(id) {
-            if (confirm('⚠️ Tem certeza?')) {
+            if (confirm('⚠️ Tem certeza que deseja excluir este usuário?')) {
                 try {
                     const response = await fetch(`${API_URL}/usuarios/${id}`, { method: 'DELETE' });
                     if (response.ok) {
                         alert('✅ Usuário excluído!');
                         carregarUsuarios();
                     } else {
-                        alert('❌ Erro ao excluir');
+                        alert('❌ Erro ao excluir usuário');
                     }
                 } catch (error) {
                     alert('❌ Erro de conexão');
@@ -338,11 +449,22 @@
             }
         }
 
+        // ===== FECHAR MODAL =====
         function fecharModal() {
             document.getElementById('modalUsuario').style.display = 'none';
         }
 
-        document.addEventListener('DOMContentLoaded', carregarUsuarios);
+        // ===== INICIALIZAR =====
+        document.addEventListener('DOMContentLoaded', () => {
+            carregarUsuarios();
+            
+            window.onclick = function(event) {
+                const modal = document.getElementById('modalUsuario');
+                if (event.target === modal) {
+                    fecharModal();
+                }
+            };
+        });
     </script>
 </body>
 </html>

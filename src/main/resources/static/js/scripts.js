@@ -1,6 +1,40 @@
 // js/scripts.js
 const API_URL = '/api';
 
+// ===== LOADING / SPINNER =====
+function mostrarLoading() {
+    // Verificar se já existe um overlay
+    if (document.getElementById('globalLoading')) return;
+    
+    const overlay = document.createElement('div');
+    overlay.id = 'globalLoading';
+    overlay.className = 'loading-overlay';
+    overlay.innerHTML = `
+        <div class="loading-container">
+            <div class="spinner"></div>
+            <div class="loading-text">Carregando...</div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+}
+
+function esconderLoading() {
+    const overlay = document.getElementById('globalLoading');
+    if (overlay) {
+        overlay.remove();
+    }
+}
+
+function mostrarLoadingTabela(tabelaId) {
+    const tabela = document.getElementById(tabelaId);
+    if (tabela) {
+        tabela.innerHTML = `<tr><td colspan="10" class="table-loading">
+            <div class="spinner-small"></div><br>
+            Carregando dados...
+        </td></tr>`;
+    }
+}
+
 // ===== FUNÇÕES GLOBAIS =====
 function sair() {
     alert('🔓 Logout realizado com sucesso!');

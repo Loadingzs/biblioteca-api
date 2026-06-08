@@ -131,7 +131,6 @@
             color: white;
         }
 
-        /* Paginação */
         .pagination-container {
             display: flex;
             justify-content: space-between;
@@ -173,6 +172,28 @@
         .pagination-info {
             color: #666;
             font-size: 0.9rem;
+        }
+
+        .table-loading {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+        }
+
+        .spinner-small {
+            width: 30px;
+            height: 30px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #2d6a4f;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-bottom: 0.5rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -216,11 +237,13 @@
                     </tr>
                 </thead>
                 <tbody id="tabelaLivros">
-                    <tr><td colspan="6" style="text-align: center;">Carregando livros...</td></tr>
+                    <tr><td colspan="6" class="table-loading">
+                        <div class="spinner-small"></div><br>
+                        Carregando livros...
+                    </td></tr>
                 </tbody>
             </table>
             
-            <!-- PAGINAÇÃO -->
             <div class="pagination-container" id="paginationContainer">
                 <div class="pagination-info" id="paginationInfo">
                     Mostrando 0 de 0 registros
@@ -234,7 +257,6 @@
         </div>
     </main>
     
-    <!-- MODAL DE CADASTRO/EDIÇÃO -->
     <div id="modalLivro" class="modal">
         <div class="modal-content">
             <h3 id="modalTitulo">📖 Novo Livro</h3>
@@ -263,7 +285,6 @@
         let livrosFiltrados = [];
         let editandoId = null;
         
-        // PAGINAÇÃO
         let paginaAtual = 1;
         let itensPorPagina = 5;
         let totalPaginas = 1;
@@ -273,7 +294,7 @@
             if (totalPaginas === 0) totalPaginas = 1;
             if (paginaAtual > totalPaginas) paginaAtual = totalPaginas;
             
-            document.getElementById('paginacaoInfo').innerHTML = `Mostrando ${Math.min(itensPorPagina, livrosFiltrados.length)} de ${livrosFiltrados.length} registros`;
+            document.getElementById('paginationInfo').innerHTML = `Mostrando ${Math.min(itensPorPagina, livrosFiltrados.length)} de ${livrosFiltrados.length} registros`;
             document.getElementById('paginaAtual').innerHTML = `Página ${paginaAtual} de ${totalPaginas}`;
             
             document.getElementById('btnAnterior').disabled = (paginaAtual <= 1);
@@ -294,8 +315,8 @@
             }
         }
 
-        // ===== CARREGAR LIVROS =====
         async function carregarLivros() {
+            mostrarLoadingTabela('tabelaLivros');
             try {
                 const response = await fetch(`${API_URL}/livros`);
                 if (!response.ok) throw new Error('Erro ao carregar livros');
@@ -309,7 +330,6 @@
             }
         }
 
-        // ===== RENDERIZAR TABELA COM PAGINAÇÃO =====
         function renderizarTabelaLivros() {
             const tbody = document.getElementById('tabelaLivros');
             tbody.innerHTML = '';
@@ -341,7 +361,6 @@
             });
         }
 
-        // ===== FILTRAR LIVROS =====
         function filtrarLivros() {
             const busca = document.getElementById('buscaLivro').value.toLowerCase();
             
@@ -359,7 +378,6 @@
             renderizarTabelaLivros();
         }
 
-        // ===== ABRIR MODAL =====
         function abrirModalCadastro() {
             editandoId = null;
             document.getElementById('modalTitulo').innerText = '📖 Novo Livro';
@@ -371,7 +389,6 @@
             document.getElementById('modalLivro').style.display = 'flex';
         }
 
-        // ===== EDITAR LIVRO =====
         function editarLivro(id) {
             const livro = livros.find(l => l.id === id);
             if (livro) {
@@ -386,7 +403,6 @@
             }
         }
 
-        // ===== SALVAR LIVRO =====
         async function salvarLivro() {
             const titulo = document.getElementById('titulo').value.trim();
             const autor = document.getElementById('autor').value.trim();
@@ -418,6 +434,8 @@
                 disponivel: status === 'disponivel'
             };
 
+            mostrarLoading();
+            
             try {
                 let response;
                 if (editandoId) {
@@ -434,6 +452,8 @@
                     });
                 }
 
+                esconderLoading();
+
                 if (response.ok) {
                     alert(editandoId ? '✅ Livro atualizado!' : '✅ Livro cadastrado!');
                     fecharModal();
@@ -442,16 +462,18 @@
                     alert('❌ Erro ao salvar livro');
                 }
             } catch (error) {
+                esconderLoading();
                 console.error('Erro:', error);
                 alert('❌ Erro de conexão');
             }
         }
 
-        // ===== DELETAR LIVRO =====
         async function deletarLivro(id) {
             if (confirm('⚠️ Tem certeza que deseja excluir este livro?')) {
+                mostrarLoading();
                 try {
                     const response = await fetch(`${API_URL}/livros/${id}`, { method: 'DELETE' });
+                    esconderLoading();
                     if (response.ok) {
                         alert('✅ Livro excluído!');
                         carregarLivros();
@@ -459,17 +481,16 @@
                         alert('❌ Erro ao excluir');
                     }
                 } catch (error) {
+                    esconderLoading();
                     alert('❌ Erro de conexão');
                 }
             }
         }
 
-        // ===== FECHAR MODAL =====
         function fecharModal() {
             document.getElementById('modalLivro').style.display = 'none';
         }
 
-        // ===== INICIALIZAR =====
         document.addEventListener('DOMContentLoaded', () => {
             carregarLivros();
             

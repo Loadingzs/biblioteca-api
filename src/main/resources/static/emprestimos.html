@@ -6,103 +6,25 @@
     <title>Gerenciar Empréstimos | Biblioteca Web</title>
     <link rel="stylesheet" href="css/style.css">
     <style>
-        .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-        }
-        
-        .btn-primary {
-            background: #2d6a4f;
-            color: white;
-            border: none;
-            padding: 0.7rem 1.5rem;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-        
-        .btn-return {
-            background: #28a745;
-            color: white;
-            border: none;
-            padding: 0.3rem 0.8rem;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        
-        .filtros {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-        
-        .filtros button {
-            padding: 0.5rem 1rem;
-            border: 1px solid #ddd;
-            background: white;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-        
-        .filtros button.ativo {
-            background: #2d6a4f;
-            color: white;
-            border-color: #2d6a4f;
-        }
-        
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-        
-        .modal-content {
-            background: white;
-            border-radius: 20px;
-            padding: 2rem;
-            width: 90%;
-            max-width: 500px;
-        }
-        
-        .modal-content select, .modal-content input {
-            width: 100%;
-            padding: 0.7rem;
-            margin-bottom: 1rem;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-        }
-        
-        .modal-buttons {
-            display: flex;
-            gap: 1rem;
-            justify-content: flex-end;
-        }
-        
-        .btn-save {
-            background: #2d6a4f;
-            color: white;
-            border: none;
-            padding: 0.5rem 1.5rem;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-        
-        .btn-cancel {
-            background: #6c757d;
-            color: white;
-            border: none;
-            padding: 0.5rem 1.5rem;
-            border-radius: 8px;
-            cursor: pointer;
-        }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        .btn-primary { background: #2d6a4f; color: white; border: none; padding: 0.7rem 1.5rem; border-radius: 8px; cursor: pointer; }
+        .btn-return { background: #28a745; color: white; border: none; padding: 0.3rem 0.8rem; border-radius: 5px; cursor: pointer; }
+        .filtros { display: flex; gap: 1rem; margin-bottom: 1.5rem; }
+        .filtros button { padding: 0.5rem 1rem; border: 1px solid #ddd; background: white; border-radius: 8px; cursor: pointer; }
+        .filtros button.ativo { background: #2d6a4f; color: white; border-color: #2d6a4f; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: white; border-radius: 20px; padding: 2rem; width: 90%; max-width: 500px; }
+        .modal-content select, .modal-content input { width: 100%; padding: 0.7rem; margin-bottom: 1rem; border: 1px solid #ddd; border-radius: 8px; }
+        .modal-buttons { display: flex; gap: 1rem; justify-content: flex-end; }
+        .btn-save { background: #2d6a4f; color: white; border: none; padding: 0.5rem 1.5rem; border-radius: 8px; cursor: pointer; }
+        .btn-cancel { background: #6c757d; color: white; border: none; padding: 0.5rem 1.5rem; border-radius: 8px; cursor: pointer; }
+        .status-ativo { color: #2d6a4f; font-weight: bold; }
+        .status-atrasado { color: #e63946; font-weight: bold; }
+        .status-finalizado { color: #6c757d; }
+        .pagination-container { display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; flex-wrap: wrap; gap: 1rem; }
+        .pagination-controls { display: flex; gap: 0.5rem; align-items: center; }
+        .pagination-btn { background: white; border: 1px solid #ddd; padding: 0.5rem 1rem; border-radius: 5px; cursor: pointer; }
+        .pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; }
     </style>
 </head>
 <body>
@@ -115,212 +37,132 @@
             <a href="emprestimos.html" style="background: rgba(255,255,255,0.2);">Empréstimos</a>
             <a href="relatorios.html">Relatórios</a>
         </nav>
-        <div class="user-info">
-            <span>👤 Admin</span>
-            <button class="btn-sair" onclick="sair()">Sair</button>
-        </div>
+        <div class="user-info"><span>👤 Admin</span><button class="btn-sair" onclick="sair()">Sair</button></div>
     </header>
 
     <main class="container">
-        <div class="page-header">
-            <h2>🔄 Gerenciamento de Empréstimos</h2>
-            <button class="btn-primary" onclick="abrirModalEmprestimo()">+ Novo Empréstimo</button>
-        </div>
-        
+        <div class="page-header"><h2>🔄 Gerenciamento de Empréstimos</h2><button class="btn-primary" onclick="abrirModalEmprestimo()">+ Novo Empréstimo</button></div>
         <div class="filtros">
-            <button class="ativo" onclick="filtrarEmprestimos('todos')">Todos</button>
-            <button onclick="filtrarEmprestimos('ATIVO')">Ativos</button>
-            <button onclick="filtrarEmprestimos('ATRASADO')">Atrasados</button>
-            <button onclick="filtrarEmprestimos('FINALIZADO')">Finalizados</button>
+            <button class="ativo" onclick="filtrarEmprestimos('todos', this)">Todos</button>
+            <button onclick="filtrarEmprestimos('ATIVO', this)">Ativos</button>
+            <button onclick="filtrarEmprestimos('ATRASADO', this)">Atrasados</button>
+            <button onclick="filtrarEmprestimos('FINALIZADO', this)">Finalizados</button>
         </div>
-        
         <div class="tabela-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Usuário</th>
-                        <th>Livro</th>
-                        <th>Data Empréstimo</th>
-                        <th>Data Prevista</th>
-                        <th>Status</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody id="tabelaEmprestimos">
-                    <!-- Dados preenchidos pelo JavaScript -->
-                </tbody>
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead><tr style="background: #f8f9fa;"><th>ID</th><th>Usuário</th><th>Livro</th><th>Data Empréstimo</th><th>Data Prevista</th><th>Status</th><th>Ações</th></tr></thead>
+                <tbody id="tabelaEmprestimos"><tr><td colspan="7" style="text-align: center;">Carregando empréstimos...</td></tr</tbody>
             </table>
+            <div class="pagination-container">
+                <div class="pagination-info" id="paginationInfo">Mostrando 0 de 0 registros</div>
+                <div class="pagination-controls">
+                    <button class="pagination-btn" id="btnAnterior" onclick="paginaAnterior()">◀ Anterior</button>
+                    <span id="paginaAtual">Página 1</span>
+                    <button class="pagination-btn" id="btnProximo" onclick="paginaProxima()">Próximo ▶</button>
+                </div>
+            </div>
         </div>
     </main>
     
     <div id="modalEmprestimo" class="modal">
         <div class="modal-content">
             <h3>🔄 Novo Empréstimo</h3>
-            <select id="selectUsuario">
-                <option value="">Selecione um usuário</option>
-            </select>
-            <select id="selectLivro">
-                <option value="">Selecione um livro</option>
-            </select>
+            <select id="selectUsuario"><option value="">Selecione um usuário</option></select>
+            <select id="selectLivro"><option value="">Selecione um livro</option></select>
             <input type="date" id="dataPrevista">
-            <div class="modal-buttons">
-                <button class="btn-cancel" onclick="fecharModalEmprestimo()">Cancelar</button>
-                <button class="btn-save" onclick="realizarEmprestimo()">Registrar</button>
-            </div>
+            <div class="modal-buttons"><button class="btn-cancel" onclick="fecharModalEmprestimo()">Cancelar</button><button class="btn-save" onclick="realizarEmprestimo()">Registrar</button></div>
         </div>
     </div>
     
-    <footer class="footer">
-        <p>&copy; <span id="anoAtual">2026</span> Sistema de Biblioteca Web - Todos os direitos reservados</p>
-    </footer>
+    <footer class="footer"><p>&copy; <span id="anoAtual">2026</span> Sistema de Biblioteca Web - Todos os direitos reservados</p></footer>
     
     <script src="js/scripts.js"></script>
     <script>
-        let emprestimos = [];
-        let livros = [];
-        let usuarios = [];
-        let filtroAtual = 'todos';
-        const API_URL = '/api';
+        // NÃO DECLARAR API_URL AQUI
+        let emprestimos = [], emprestimosFiltrados = [], livros = [], usuarios = [];
+        let filtroAtual = 'todos', paginaAtual = 1, itensPorPagina = 5, totalPaginas = 1;
 
         async function carregarDados() {
             try {
                 const [resLivros, resUsuarios, resEmprestimos] = await Promise.all([
-                    fetch(`${API_URL}/livros`),
-                    fetch(`${API_URL}/usuarios`),
-                    fetch(`${API_URL}/emprestimos`)
+                    fetch(`${API_URL}/livros`), fetch(`${API_URL}/usuarios`), fetch(`${API_URL}/emprestimos`)
                 ]);
                 livros = await resLivros.json();
                 usuarios = await resUsuarios.json();
                 emprestimos = await resEmprestimos.json();
+                emprestimosFiltrados = [...emprestimos];
+                paginaAtual = 1;
                 renderizarTabelaEmprestimos();
-            } catch (error) {
-                console.error('Erro:', error);
-                alert('❌ Erro ao carregar dados');
-            }
+            } catch (error) { document.getElementById('tabelaEmprestimos').innerHTML = '<tr><td colspan="7" style="color:red;">❌ Erro ao carregar</td></tr'; }
         }
+
+        function atualizarPaginacao() {
+            totalPaginas = Math.ceil(emprestimosFiltrados.length / itensPorPagina);
+            if (totalPaginas === 0) totalPaginas = 1;
+            if (paginaAtual > totalPaginas) paginaAtual = totalPaginas;
+            document.getElementById('paginationInfo').innerHTML = `Mostrando ${Math.min(itensPorPagina, emprestimosFiltrados.length)} de ${emprestimosFiltrados.length} registros`;
+            document.getElementById('paginaAtual').innerHTML = `Página ${paginaAtual} de ${totalPaginas}`;
+            document.getElementById('btnAnterior').disabled = (paginaAtual <= 1);
+            document.getElementById('btnProximo').disabled = (paginaAtual >= totalPaginas);
+        }
+
+        function paginaAnterior() { if (paginaAtual > 1) { paginaAtual--; renderizarTabelaEmprestimos(); } }
+        function paginaProxima() { if (paginaAtual < totalPaginas) { paginaAtual++; renderizarTabelaEmprestimos(); } }
 
         function renderizarTabelaEmprestimos() {
             const tbody = document.getElementById('tabelaEmprestimos');
             tbody.innerHTML = '';
-            
-            let filtrados = emprestimos;
-            if (filtroAtual !== 'todos') {
-                filtrados = emprestimos.filter(e => e.status === filtroAtual);
-            }
-            
-            filtrados.forEach(emp => {
+            atualizarPaginacao();
+            const inicio = (paginaAtual - 1) * itensPorPagina;
+            const emprestimosPagina = emprestimosFiltrados.slice(inicio, inicio + itensPorPagina);
+            if (emprestimosPagina.length === 0) { tbody.innerHTML = '<tr><td colspan="7">Nenhum empréstimo encontrado</td></tr'; return; }
+            emprestimosPagina.forEach(emp => {
                 const usuario = usuarios.find(u => u.id === emp.usuarioId);
                 const livro = livros.find(l => l.id === emp.livroId);
-                
-                let statusClass = '';
-                if (emp.status === 'ATIVO') statusClass = 'status-ativo';
-                else if (emp.status === 'ATRASADO') statusClass = 'status-atrasado';
-                else statusClass = 'status-devolvido';
-                
+                let statusClass = emp.status === 'ATIVO' ? 'status-ativo' : (emp.status === 'ATRASADO' ? 'status-atrasado' : 'status-finalizado');
                 const row = tbody.insertRow();
-                row.innerHTML = `
-                    <td>${emp.id}</td>
-                    <td>${usuario?.nome || 'N/A'}</td>
-                    <td>${livro?.titulo || 'N/A'}</td>
-                    <td>${emp.dataEmprestimo || '-'}</td>
+                row.innerHTML = `<td>${emp.id}</td><td>${usuario?.nome || 'N/A'}</td><td>${livro?.titulo || 'N/A'}</td>
+                    <td>${emp.dataEmprestimo ? emp.dataEmprestimo.split('T')[0] : '-'}</td>
                     <td>${emp.dataDevolucaoPrevista || '-'}</td>
                     <td class="${statusClass}">${emp.status || '-'}</td>
-                    <td>
-                        ${emp.status !== 'FINALIZADO' ? `<button class="btn-return" onclick="registrarDevolucao(${emp.id})">📖 Devolver</button>` : '—'}
-                    </td>
-                `;
+                    <td>${emp.status !== 'FINALIZADO' ? `<button class="btn-return" onclick="registrarDevolucao(${emp.id})">📖 Devolver</button>` : '—'}</td>`;
             });
         }
 
-        function filtrarEmprestimos(filtro) {
+        function filtrarEmprestimos(filtro, btn) {
             filtroAtual = filtro;
-            document.querySelectorAll('.filtros button').forEach(btn => btn.classList.remove('ativo'));
-            event.target.classList.add('ativo');
+            document.querySelectorAll('.filtros button').forEach(b => b.classList.remove('ativo'));
+            btn.classList.add('ativo');
+            emprestimosFiltrados = filtroAtual === 'todos' ? [...emprestimos] : emprestimos.filter(e => e.status === filtroAtual);
+            paginaAtual = 1;
             renderizarTabelaEmprestimos();
         }
 
-        async function abrirModalEmprestimo() {
-            const selectUsuario = document.getElementById('selectUsuario');
-            const selectLivro = document.getElementById('selectLivro');
-            
-            selectUsuario.innerHTML = '<option value="">Selecione um usuário</option>';
-            selectLivro.innerHTML = '<option value="">Selecione um livro</option>';
-            
-            usuarios.forEach(u => {
-                selectUsuario.innerHTML += `<option value="${u.id}">${u.nome}</option>`;
-            });
-            
-            const livrosDisponiveis = livros.filter(l => l.disponivel === true);
-            livrosDisponiveis.forEach(l => {
-                selectLivro.innerHTML += `<option value="${l.id}">${l.titulo}</option>`;
-            });
-            
-            document.getElementById('dataPrevista').value = '';
-            document.getElementById('modalEmprestimo').style.display = 'flex';
+        function abrirModalEmprestimo() { carregarSelects(); document.getElementById('dataPrevista').value = ''; document.getElementById('modalEmprestimo').style.display = 'flex'; }
+        async function carregarSelects() {
+            const su = document.getElementById('selectUsuario'), sl = document.getElementById('selectLivro');
+            su.innerHTML = '<option value="">Selecione um usuário</option>';
+            sl.innerHTML = '<option value="">Selecione um livro</option>';
+            usuarios.forEach(u => su.innerHTML += `<option value="${u.id}">${u.nome}</option>`);
+            livros.filter(l => l.disponivel).forEach(l => sl.innerHTML += `<option value="${l.id}">${l.titulo}</option>`);
+            if (sl.options.length === 1) sl.innerHTML = '<option value="">Nenhum livro disponível</option>';
         }
-
         async function realizarEmprestimo() {
-            const usuarioId = parseInt(document.getElementById('selectUsuario').value);
-            const livroId = parseInt(document.getElementById('selectLivro').value);
-            const dataPrevista = document.getElementById('dataPrevista').value;
-            
-            if (!usuarioId || !livroId || !dataPrevista) {
-                alert('❌ Preencha todos os campos!');
-                return;
-            }
-            
-            const hoje = new Date();
-            const dataPrevistaDate = new Date(dataPrevista);
-            const diasDiferenca = Math.ceil((dataPrevistaDate - hoje) / (1000 * 60 * 60 * 24));
-            
+            const usuarioId = parseInt(document.getElementById('selectUsuario').value), livroId = parseInt(document.getElementById('selectLivro').value), dataPrevista = document.getElementById('dataPrevista').value;
+            if (!usuarioId || !livroId || !dataPrevista) { alert('❌ Preencha todos os campos!'); return; }
+            const dias = Math.ceil((new Date(dataPrevista) - new Date()) / (1000*60*60*24));
+            if (dias <= 0) { alert('❌ Data deve ser futura!'); return; }
             try {
-                const response = await fetch(`${API_URL}/emprestimos`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        livroId: livroId,
-                        usuarioId: usuarioId,
-                        dias: diasDiferenca
-                    })
-                });
-                
-                if (response.ok) {
-                    alert('✅ Empréstimo realizado!');
-                    fecharModalEmprestimo();
-                    carregarDados();
-                } else {
-                    alert('❌ Erro ao realizar empréstimo');
-                }
-            } catch (error) {
-                alert('❌ Erro de conexão');
-            }
+                const response = await fetch(`${API_URL}/emprestimos`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ livroId, usuarioId, dias }) });
+                if (response.ok) { alert('✅ Empréstimo realizado!'); fecharModalEmprestimo(); carregarDados(); } else alert('❌ Erro ao realizar');
+            } catch (error) { alert('❌ Erro de conexão'); }
         }
-
         async function registrarDevolucao(id) {
-            if (confirm('📖 Registrar devolução deste empréstimo?')) {
-                try {
-                    const response = await fetch(`${API_URL}/emprestimos/devolucao/${id}`, {
-                        method: 'PUT'
-                    });
-                    
-                    if (response.ok) {
-                        alert('✅ Devolução registrada!');
-                        carregarDados();
-                    } else {
-                        alert('❌ Erro ao registrar devolução');
-                    }
-                } catch (error) {
-                    alert('❌ Erro de conexão');
-                }
-            }
+            if (confirm('📖 Registrar devolução?')) { try { const response = await fetch(`${API_URL}/emprestimos/devolucao/${id}`, { method: 'PUT' }); if (response.ok) { alert('✅ Devolução registrada!'); carregarDados(); } else alert('❌ Erro'); } catch (error) { alert('❌ Erro de conexão'); } }
         }
+        function fecharModalEmprestimo() { document.getElementById('modalEmprestimo').style.display = 'none'; }
 
-        function fecharModalEmprestimo() {
-            document.getElementById('modalEmprestimo').style.display = 'none';
-        }
-
-        document.addEventListener('DOMContentLoaded', carregarDados);
+        carregarDados();
     </script>
 </body>
 </html>

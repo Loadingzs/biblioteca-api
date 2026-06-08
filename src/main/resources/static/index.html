@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | Biblioteca Web</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header class="header">
+        <div class="logo">📚 <span>Biblioteca</span> Web</div>
+        <nav class="nav">
+            <a href="index.html">Dashboard</a>
+            <a href="livros.html">Livros</a>
+            <a href="usuarios.html">Usuários</a>
+            <a href="emprestimos.html">Empréstimos</a>
+            <a href="relatorios.html">Relatórios</a>
+        </nav>
+        <div class="user-info">
+            <span>👤 Admin</span>
+            <button class="btn-sair" onclick="sair()">Sair</button>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="cards-nav">
+            <div class="card-nav" onclick="navegarPara('livros.html')">
+                <div class="icon">📖</div>
+                <h3>Livros</h3>
+                <div class="total" id="totalLivros">0</div>
+                <button class="btn-card">Gerenciar</button>
+            </div>
+            <div class="card-nav" onclick="navegarPara('usuarios.html')">
+                <div class="icon">👥</div>
+                <h3>Usuários</h3>
+                <div class="total" id="totalUsuarios">0</div>
+                <button class="btn-card">Gerenciar</button>
+            </div>
+            <div class="card-nav" onclick="navegarPara('emprestimos.html')">
+                <div class="icon">🔄</div>
+                <h3>Empréstimos</h3>
+                <div class="total" id="emprestimosAtivos">0</div>
+                <button class="btn-card">Ver ativos</button>
+            </div>
+            <div class="card-nav" onclick="navegarPara('relatorios.html')">
+                <div class="icon">📊</div>
+                <h3>Relatórios</h3>
+                <button class="btn-card">Gerar</button>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <h4>📚 Total de Livros</h4>
+                <div class="stat-value" id="statLivros">0</div>
+                <div class="stat-trend">↗ Carregando...</div>
+            </div>
+            <div class="stat-card">
+                <h4>🔄 Empréstimos Ativos</h4>
+                <div class="stat-value" id="statEmprestimos">0</div>
+                <div class="stat-trend">Carregando...</div>
+            </div>
+            <div class="stat-card">
+                <h4>💰 Multas Pendentes</h4>
+                <div class="stat-value" id="statMultas">R$ 0,00</div>
+                <div class="stat-trend">Carregando...</div>
+            </div>
+        </div>
+
+        <div class="tabela-container">
+            <h3>📋 Últimos Empréstimos</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Usuário</th>
+                        <th>Livro</th>
+                        <th>Data de Empréstimo</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelaEmprestimos"></tbody>
+            </table>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; <span id="anoAtual">2026</span> Sistema de Biblioteca Web - Todos os direitos reservados</p>
+    </footer>
+
+    <script src="js/scripts.js"></script>
+</body>
+</html>

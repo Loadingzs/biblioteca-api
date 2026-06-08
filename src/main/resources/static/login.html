@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Biblioteca Web</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a3c34, #2d6a4f);
+        }
+        
+        .login-card {
+            background: white;
+            border-radius: 20px;
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+        
+        .login-logo {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .login-logo h1 {
+            font-size: 2rem;
+            color: #1a3c34;
+        }
+        
+        .login-logo span {
+            color: #ffd166;
+        }
+        
+        .login-logo p {
+            color: #666;
+            margin-top: 0.5rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border 0.3s;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #2d6a4f;
+        }
+        
+        .btn-login {
+            width: 100%;
+            background: linear-gradient(135deg, #1a3c34, #2d6a4f);
+            color: white;
+            border: none;
+            padding: 0.8rem;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        
+        .btn-login:hover {
+            transform: translateY(-2px);
+        }
+        
+        .info-login {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            color: #666;
+        }
+        
+        .info-login p {
+            margin: 0.3rem 0;
+        }
+        
+        .info-login code {
+            background: #e9ecef;
+            padding: 0.2rem 0.5rem;
+            border-radius: 5px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-logo">
+                <h1>📚 <span>Biblioteca</span> Web</h1>
+                <p>Faça login para acessar o sistema</p>
+            </div>
+            
+            <form onsubmit="return fazerLogin(event)">
+                <div class="form-group">
+                    <label>📧 E-mail</label>
+                    <input type="email" id="email" placeholder="admin@biblioteca.com" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>🔒 Senha</label>
+                    <input type="password" id="senha" placeholder="••••••••" required>
+                </div>
+                
+                <button type="submit" class="btn-login">Entrar no Sistema</button>
+            </form>
+            
+            <div class="info-login">
+                <p>🔐 Credenciais de demonstração:</p>
+                <p>📧 E-mail: <code>admin@biblioteca.com</code></p>
+                <p>🔑 Senha: <code>admin123</code></p>
+            </div>
+        </div>
+    </div>
+    
+    <script src="js/scripts.js"></script>
+</body>
+</html>

@@ -258,13 +258,35 @@
             }
         }
 
-        async function salvarUsuario() {
-            const nome = document.getElementById('nome').value;
-            const email = document.getElementById('email').value;
-            const telefone = document.getElementById('telefone').value;
+            async function salvarUsuario() {
+            const nome = document.getElementById('nome').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const telefone = document.getElementById('telefone').value.trim();
 
-            if (!nome || !email || !telefone) {
-                alert('❌ Preencha todos os campos!');
+            // ===== VALIDAÇÕES =====
+            if (!nome) {
+                alert('❌ O campo Nome é obrigatório!');
+                document.getElementById('nome').focus();
+                return;
+            }
+            
+            if (!email) {
+                alert('❌ O campo E-mail é obrigatório!');
+                document.getElementById('email').focus();
+                return;
+            }
+            
+            // Validação de formato de email
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                alert('❌ E-mail inválido! Use o formato: nome@dominio.com');
+                document.getElementById('email').focus();
+                return;
+            }
+            
+            if (!telefone) {
+                alert('❌ O campo Telefone é obrigatório!');
+                document.getElementById('telefone').focus();
                 return;
             }
 
@@ -287,14 +309,16 @@
                 }
 
                 if (response.ok) {
-                    alert(editandoUsuarioId ? '✅ Usuário atualizado!' : '✅ Usuário cadastrado!');
+                    alert(editandoUsuarioId ? '✅ Usuário atualizado com sucesso!' : '✅ Usuário cadastrado com sucesso!');
                     fecharModal();
                     carregarUsuarios();
                 } else {
-                    alert('❌ Erro ao salvar usuário');
+                    const erro = await response.text();
+                    alert('❌ Erro ao salvar usuário: ' + erro);
                 }
             } catch (error) {
-                alert('❌ Erro de conexão');
+                console.error('Erro:', error);
+                alert('❌ Erro de conexão com o servidor. Verifique se o back-end está rodando.');
             }
         }
 

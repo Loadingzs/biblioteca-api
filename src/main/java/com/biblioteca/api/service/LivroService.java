@@ -6,21 +6,25 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;
 
-@Service  // ← ADICIONE ESTA LINHA
-
+@Service
 public class LivroService {
     
     @Autowired
     private LivroRepository livroRepository;
     
+    // Construtor (opcional, o @Autowired já resolve)
     public LivroService() {
-        this.livroRepository = new LivroRepository();
+        // O Spring vai injetar o repository automaticamente
     }
-    // Método auxiliar para normalizar ISBN (remove hífens e espaços)
+    
+    // ==================== MÉTODOS AUXILIARES ====================
+    
+    // Normalizar ISBN (remove hífens e espaços)
     private String normalizarIsbn(String isbn) {
         if (isbn == null) return null;
-        return isbn.replaceAll("[-\\s]", ""); // Remove hífens e espaços
+        return isbn.replaceAll("[-\\s]", "");
     }
+    
     // ==================== REGRAS DE NEGÓCIO ====================
     
     // Validar dados do livro antes de salvar
@@ -48,33 +52,36 @@ public class LivroService {
         return true;
     }
     
-    // Verificar se ISBN já existe (evitar duplicação)
-    // Substitua o método isbnJaExiste no LivroService.java por este:
-
+    // ==================== VALIDAÇÃO DE ISBN DUPLICADO (BACK-END) ====================
+    
+    // Verifica se ISBN já existe no banco (ignorando hífens)
     public boolean isbnJaExiste(String isbn) {
         String isbnNormalizado = normalizarIsbn(isbn);
-
+        
         List<Livro> livros = livroRepository.buscarTodos();
         for (Livro livro : livros) {
             String isbnExistente = normalizarIsbn(livro.getIsbn());
             if (isbnExistente != null && isbnExistente.equals(isbnNormalizado)) {
+                System.out.println("🔍 ISBN já cadastrado: " + livro.getIsbn());
                 return true;
             }
         }
         return false;
     }
-
+    
+    // ==================== CRUD COM VALIDAÇÕES ====================
+    
     public boolean cadastrarLivro(Livro livro) {
         if (!validarLivro(livro)) {
             return false;
         }
-
-        // Verifica ignorando hífens
+        
+        // VALIDAÇÃO DE ISBN DUPLICADO
         if (isbnJaExiste(livro.getIsbn())) {
-            System.err.println("❌ ISBN já cadastrado (ignorando hífens): " + livro.getIsbn());
+            System.err.println("❌ ISBN já cadastrado: " + livro.getIsbn());
             return false;
         }
-
+        
         livro.setDisponivel(true);
         return livroRepository.salvar(livro);
     }
@@ -108,6 +115,17 @@ public class LivroService {
             return false;
         }
         
+        // Se o ISBN mudou, verificar se não está em uso por outro livro
+        String isbnNovo = normalizarIsbn(livro.getIsbn());
+        String isbnExistente = normalizarIsbn(existente.getIsbn());
+        
+        if (!isbnExistente.equals(isbnNovo)) {
+            if (isbnJaExiste(livro.getIsbn())) {
+                System.err.println("❌ ISBN já está em uso por outro livro: " + livro.getIsbn());
+                return false;
+            }
+        }
+        
         return livroRepository.atualizar(livro);
     }
     
@@ -135,7 +153,7 @@ public class LivroService {
     public List<Livro> buscarLivrosPorTitulo(String titulo) {
         if (titulo == null || titulo.trim().isEmpty()) {
             System.err.println("❌ Título não pode ser vazio");
-            return List.of(); // Retorna lista vazia
+            return List.of();
         }
         return livroRepository.buscarPorTitulo(titulo);
     }

@@ -7,7 +7,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-@Repository  // ← ADICIONE ESTA LINHA
+@Repository  
 
 public class LivroRepository {
     
@@ -269,4 +269,25 @@ public Livro buscarPorIsbnExato(String isbn) {
         
         return livro;
     }
+    
+    public boolean isbnExiste(String isbn) {
+    String sql = "SELECT COUNT(*) FROM livros WHERE isbn = ?";
+    
+    try (Connection conn = ConnectionFactory.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
+        
+        stmt.setString(1, isbn);
+        
+        try (ResultSet rs = stmt.executeQuery()) {
+            if (rs.next()) {
+                return rs.getInt(1) > 0;
+            }
+        }
+        
+    } catch (SQLException e) {
+        System.err.println("❌ Erro ao verificar ISBN: " + e.getMessage());
+    }
+    
+    return false;
+}
 }

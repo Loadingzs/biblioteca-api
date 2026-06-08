@@ -130,6 +130,10 @@
             background: #6c757d;
             color: white;
         }
+        
+        .status-ativo { color: #2d6a4f; font-weight: bold; }
+        .status-atrasado { color: #e63946; font-weight: bold; }
+        .status-devolvido { color: #6c757d; }
     </style>
 </head>
 <body>
@@ -160,25 +164,25 @@
         </div>
         
         <div class="tabela-container">
-            <table>
+            <table style="width: 100%; border-collapse: collapse;">
                 <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Título</th>
-                        <th>Autor</th>
-                        <th>ISBN</th>
-                        <th>Status</th>
-                        <th>Ações</th>
+                    <tr style="background: #f8f9fa;">
+                        <th style="padding: 0.75rem; text-align: left;">ID</th>
+                        <th style="padding: 0.75rem; text-align: left;">Título</th>
+                        <th style="padding: 0.75rem; text-align: left;">Autor</th>
+                        <th style="padding: 0.75rem; text-align: left;">ISBN</th>
+                        <th style="padding: 0.75rem; text-align: left;">Status</th>
+                        <th style="padding: 0.75rem; text-align: left;">Ações</th>
                     </tr>
                 </thead>
                 <tbody id="tabelaLivros">
-                    <!-- Dados preenchidos pelo JavaScript -->
+                    <tr><td colspan="6" style="text-align: center;">Carregando livros...</td></tr>
                 </tbody>
             </table>
         </div>
     </main>
     
-    <!-- MODAL -->
+    <!-- MODAL DE CADASTRO/EDIÇÃO -->
     <div id="modalLivro" class="modal">
         <div class="modal-content">
             <h3 id="modalTitulo">📖 Novo Livro</h3>
@@ -203,34 +207,42 @@
     
     <script src="js/scripts.js"></script>
     <script>
+        // NÃO DECLARAR API_URL AQUI! (já está no scripts.js)
         let livros = [];
         let editandoId = null;
-        const API_URL = '/api';
 
+        // ===== CARREGAR LIVROS =====
         async function carregarLivros() {
             try {
                 const response = await fetch(`${API_URL}/livros`);
+                if (!response.ok) throw new Error('Erro ao carregar livros');
                 livros = await response.json();
                 renderizarTabelaLivros();
             } catch (error) {
-                console.error('Erro ao carregar livros:', error);
-                alert('❌ Erro ao conectar com o servidor.');
+                console.error('Erro:', error);
+                document.getElementById('tabelaLivros').innerHTML = '<tr><td colspan="6" style="text-align: center; color: red;">❌ Erro ao conectar com o servidor</td></tr>';
             }
         }
 
+        // ===== RENDERIZAR TABELA =====
         function renderizarTabelaLivros() {
             const tbody = document.getElementById('tabelaLivros');
             tbody.innerHTML = '';
             
+            if (livros.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Nenhum livro cadastrado</td></tr>';
+                return;
+            }
+            
             livros.forEach(livro => {
                 const row = tbody.insertRow();
                 row.innerHTML = `
-                    <td>${livro.id}</td>
-                    <td>${livro.titulo}</td>
-                    <td>${livro.autor}</td>
-                    <td>${livro.isbn}</td>
-                    <td>${livro.disponivel ? '✅ Disponível' : '❌ Indisponível'}</td>
-                    <td>
+                    <td style="padding: 0.75rem; border-bottom: 1px solid #ddd;">${livro.id}</td>
+                    <td style="padding: 0.75rem; border-bottom: 1px solid #ddd;">${livro.titulo}</td>
+                    <td style="padding: 0.75rem; border-bottom: 1px solid #ddd;">${livro.autor}</td>
+                    <td style="padding: 0.75rem; border-bottom: 1px solid #ddd;">${livro.isbn}</td>
+                    <td style="padding: 0.75rem; border-bottom: 1px solid #ddd;">${livro.disponivel ? '✅ Disponível' : '❌ Indisponível'}</td>
+                    <td style="padding: 0.75rem; border-bottom: 1px solid #ddd;">
                         <button class="btn-edit" onclick="editarLivro(${livro.id})">✏️</button>
                         <button class="btn-delete" onclick="deletarLivro(${livro.id})">🗑️</button>
                     </td>
@@ -238,6 +250,7 @@
             });
         }
 
+        // ===== FILTRAR LIVROS =====
         function filtrarLivros() {
             const busca = document.getElementById('buscaLivro').value.toLowerCase();
             const tbody = document.getElementById('tabelaLivros');
@@ -249,15 +262,20 @@
                 livro.isbn.includes(busca)
             );
             
+            if (filtrados.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Nenhum livro encontrado</td></tr>';
+                return;
+            }
+            
             filtrados.forEach(livro => {
                 const row = tbody.insertRow();
                 row.innerHTML = `
-                    <td>${livro.id}</td>
-                    <td>${livro.titulo}</td>
-                    <td>${livro.autor}</td>
-                    <td>${livro.isbn}</td>
-                    <td>${livro.disponivel ? '✅ Disponível' : '❌ Indisponível'}</td>
-                    <td>
+                    <td style="padding: 0.75rem; border-bottom: 1px solid #ddd;">${livro.id}</td>
+                    <td style="padding: 0.75rem; border-bottom: 1px solid #ddd;">${livro.titulo}</td>
+                    <td style="padding: 0.75rem; border-bottom: 1px solid #ddd;">${livro.autor}</td>
+                    <td style="padding: 0.75rem; border-bottom: 1px solid #ddd;">${livro.isbn}</td>
+                    <td style="padding: 0.75rem; border-bottom: 1px solid #ddd;">${livro.disponivel ? '✅ Disponível' : '❌ Indisponível'}</td>
+                    <td style="padding: 0.75rem; border-bottom: 1px solid #ddd;">
                         <button class="btn-edit" onclick="editarLivro(${livro.id})">✏️</button>
                         <button class="btn-delete" onclick="deletarLivro(${livro.id})">🗑️</button>
                     </td>
@@ -265,7 +283,9 @@
             });
         }
 
+        // ===== ABRIR MODAL =====
         function abrirModalCadastro() {
+            console.log("Abrindo modal");
             editandoId = null;
             document.getElementById('modalTitulo').innerText = '📖 Novo Livro';
             document.getElementById('livroId').value = '';
@@ -276,6 +296,7 @@
             document.getElementById('modalLivro').style.display = 'flex';
         }
 
+        // ===== EDITAR LIVRO =====
         function editarLivro(id) {
             const livro = livros.find(l => l.id === id);
             if (livro) {
@@ -290,14 +311,28 @@
             }
         }
 
+        // ===== SALVAR LIVRO =====
         async function salvarLivro() {
-            const titulo = document.getElementById('titulo').value;
-            const autor = document.getElementById('autor').value;
-            const isbn = document.getElementById('isbn').value;
+            const titulo = document.getElementById('titulo').value.trim();
+            const autor = document.getElementById('autor').value.trim();
+            const isbn = document.getElementById('isbn').value.trim();
             const status = document.getElementById('status').value;
 
-            if (!titulo || !autor || !isbn) {
-                alert('❌ Preencha todos os campos!');
+            if (!titulo) {
+                alert('❌ O campo Título é obrigatório!');
+                document.getElementById('titulo').focus();
+                return;
+            }
+            
+            if (!autor) {
+                alert('❌ O campo Autor é obrigatório!');
+                document.getElementById('autor').focus();
+                return;
+            }
+            
+            if (!isbn) {
+                alert('❌ O campo ISBN é obrigatório!');
+                document.getElementById('isbn').focus();
                 return;
             }
 
@@ -337,8 +372,9 @@
             }
         }
 
+        // ===== DELETAR LIVRO =====
         async function deletarLivro(id) {
-            if (confirm('⚠️ Tem certeza?')) {
+            if (confirm('⚠️ Tem certeza que deseja excluir este livro?')) {
                 try {
                     const response = await fetch(`${API_URL}/livros/${id}`, { method: 'DELETE' });
                     if (response.ok) {
@@ -353,11 +389,23 @@
             }
         }
 
+        // ===== FECHAR MODAL =====
         function fecharModal() {
             document.getElementById('modalLivro').style.display = 'none';
         }
 
-        document.addEventListener('DOMContentLoaded', carregarLivros);
+        // ===== INICIALIZAR =====
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("Página de livros carregada");
+            carregarLivros();
+            
+            window.onclick = function(event) {
+                const modal = document.getElementById('modalLivro');
+                if (event.target === modal) {
+                    fecharModal();
+                }
+            };
+        });
     </script>
 </body>
 </html>

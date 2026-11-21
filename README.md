@@ -1,180 +1,185 @@
 # 📚 Biblioteca API — Java e Spring Boot
 
-Aplicação de gerenciamento de biblioteca com **API REST, páginas web e persistência MySQL**. Evolui o núcleo refatorado do projeto para expor livros, usuários e empréstimos por HTTP.
+Gerenciamento de biblioteca com **API REST, interface web e MySQL**. O projeto reúne livros, leitores e empréstimos, com autenticação JWT, senhas BCrypt e permissões verificadas no servidor.
+
+[![Testes](https://github.com/Loadingzs/biblioteca-api/actions/workflows/tests.yml/badge.svg)](https://github.com/Loadingzs/biblioteca-api/actions/workflows/tests.yml)
 
 ## Funcionalidades
 
-- Cadastro, listagem, edição e exclusão de livros e usuários.
-- Empréstimos, listagem de ativos, renovação e devolução.
-- Controle de disponibilidade, limite de três empréstimos ativos/atrasados por usuário e multa de R$ 2,00 por dia de atraso.
-- Endpoint de login com emissão de JWT.
-- Páginas HTML com CSS e JavaScript servidas pela aplicação.
+- Cadastro, consulta, edição e exclusão de livros e leitores.
+- Empréstimos, renovação, devolução e controle de disponibilidade.
+- Limite de três empréstimos ativos/atrasados por leitor.
+- Multa de R$ 2,00 por dia de atraso na devolução.
+- Login por e-mail e senha armazenada com BCrypt.
+- Validação da assinatura e expiração dos tokens JWT.
+- Perfis de administração e leitura, conferidos com os dados atuais do banco.
+- Páginas de dashboard, catálogo, usuários, empréstimos e relatórios.
 
 ## Tecnologias
 
-| Área | Implementação |
+| Área | Ferramentas |
 | --- | --- |
-| Linguagem | Java 17, conforme `pom.xml` |
-| Servidor | Spring Boot 4.0.6, Spring Web |
-| Persistência | JDBC, MySQL Connector/J e SQL nos repositórios |
-| Token | JJWT 0.12.3 |
+| Back-end | Java 17, Spring Boot 4.0.6, Spring Web, Spring Security |
+| Persistência | Spring JDBC, DataSource compartilhado e MySQL |
+| Autenticação | BCrypt e JJWT 0.12.3 |
 | Interface | HTML, CSS e JavaScript |
-| Build e testes | Maven Wrapper, JUnit 5 e Mockito |
+| Testes | JUnit 5, Mockito, H2 e testes de JavaScript com Node.js |
+| Build e CI | Maven Wrapper e GitHub Actions |
 
-O starter de JPA está no `pom.xml`, mas as operações de dados atuais usam JDBC. O esquema abaixo deve ser preparado manualmente.
+## Começar
 
-## Executar localmente
-
-### 1. Clonar
+### 1. Clonar e preparar o banco
 
 Tenha JDK 17 ou superior, Git e MySQL instalados.
 
 ```bash
 git clone https://github.com/Loadingzs/biblioteca-api.git
 cd biblioteca-api
+mysql -u root -p
 ```
 
-### 2. Preparar uma base de desenvolvimento
-
-Execute no MySQL:
+No cliente MySQL, para uma **base nova**:
 
 ```sql
-CREATE DATABASE IF NOT EXISTS sistema_biblioteca CHARACTER SET utf8mb4;
-USE sistema_biblioteca;
-
-CREATE TABLE livros (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    titulo VARCHAR(200) NOT NULL,
-    autor VARCHAR(100) NOT NULL,
-    isbn VARCHAR(50) UNIQUE,
-    disponivel BOOLEAN DEFAULT TRUE,
-    data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE usuarios (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    nome VARCHAR(100) NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
-    telefone VARCHAR(20),
-    senha VARCHAR(255),
-    role VARCHAR(20) DEFAULT 'USER',
-    data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE emprestimos (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    id_livro INT NOT NULL,
-    id_usuario INT NOT NULL,
-    data_emprestimo TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    data_devolucao_prevista DATE NOT NULL,
-    data_devolucao_real DATE,
-    status ENUM('ATIVO', 'FINALIZADO', 'ATRASADO') DEFAULT 'ATIVO',
-    FOREIGN KEY (id_livro) REFERENCES livros(id),
-    FOREIGN KEY (id_usuario) REFERENCES usuarios(id)
-);
+SOURCE database/schema.sql;
 ```
 
-As colunas `senha` e `role` são utilizadas pelo `UsuarioRepository` desta versão. Se já usa um banco das versões anteriores, confira essas diferenças antes de reutilizá-lo.
+O script cria `sistema_biblioteca` e as tabelas. Para uma base existente, veja [a orientação de migração](docs/autenticacao.md); não reaplique a criação das tabelas.
 
-### 3. Configurar as duas conexões
+### 2. Configurar o ambiente
 
-A aplicação possui duas configurações que precisam apontar para o mesmo banco:
+A conexão é definida somente por `application.properties`, que lê as variáveis abaixo. Os três repositórios recebem o mesmo `DataSource` do Spring.
 
-| Arquivo | Valores a ajustar |
-| --- | --- |
-| `src/main/resources/application.properties` | `spring.datasource.url`, `spring.datasource.username` e `spring.datasource.password` |
-| `src/main/java/com/biblioteca/api/infrastructure/ConnectionFactory.java` | `URL`, `USER` e `PASSWORD` usados pelo JDBC |
+| Variável | Uso | Padrão |
+| --- | --- | --- |
+| `DB_URL` | URL JDBC do MySQL | `jdbc:mysql://localhost:3306/sistema_biblioteca` |
+| `DB_USERNAME` | Usuário do banco | `root` |
+| `DB_PASSWORD` | Senha do banco | Obrigatória |
+| `JWT_SECRET` | Chave própria de pelo menos 32 bytes | Obrigatória |
+| `JWT_EXPIRATION` | Validade do token em milissegundos | `3600000` (uma hora) |
+| `PORT` | Porta HTTP | `8080` |
 
-Em `application.properties`, configure também `jwt.secret` com uma chave aleatória própria de pelo menos 32 bytes e `jwt.expiration` com a duração em milissegundos. Não publique suas credenciais locais.
-
-### 4. Iniciar
-
-No PowerShell:
+Exemplo no PowerShell, substituindo a senha pelo seu valor local:
 
 ```powershell
+$env:DB_USERNAME = "root"
+$env:DB_PASSWORD = "SUA_SENHA_LOCAL"
+
+$jwtBytes = New-Object byte[] 32
+$rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+$rng.GetBytes($jwtBytes)
+$env:JWT_SECRET = [Convert]::ToBase64String($jwtBytes)
+$rng.Dispose()
+```
+
+A chave gerada vale para esse processo de desenvolvimento. Para manter tokens válidos entre reinicializações, preserve a mesma chave em um gerenciador de segredos ou configuração privada.
+
+No Linux/macOS, use `export NOME="valor"`. O `.env.example` serve de referência; arquivos `.env` não são carregados automaticamente.
+
+### 3. Criar o primeiro administrador
+
+Na primeira execução, habilite explicitamente o bootstrap e escolha um **e-mail ainda não cadastrado**:
+
+```powershell
+$env:BOOTSTRAP_ADMIN_ENABLED = "true"
+$env:BOOTSTRAP_ADMIN_EMAIL = "seu-email@example.com"
+$env:BOOTSTRAP_ADMIN_PASSWORD = "SUBSTITUA_POR_UMA_SENHA_PROPRIA"
 .\mvnw.cmd spring-boot:run
 ```
 
-No Linux/macOS:
+A senha inicial precisa ter pelo menos 12 caracteres e no máximo 72 bytes. O bootstrap cria a conta com BCrypt; não altera nem promove contas existentes.
 
-```bash
-sh ./mvnw spring-boot:run
+Após a criação, interrompa com `Ctrl+C`, desabilite o bootstrap e remova a senha inicial da sessão:
+
+```powershell
+$env:BOOTSTRAP_ADMIN_ENABLED = "false"
+Remove-Item Env:BOOTSTRAP_ADMIN_PASSWORD
+.\mvnw.cmd spring-boot:run
 ```
 
-Acesse <http://localhost:8080> ou a página <http://localhost:8080/login.html>.
+No Linux/macOS, execute com `sh ./mvnw spring-boot:run` e use `unset BOOTSTRAP_ADMIN_PASSWORD`.
+
+Abra <http://localhost:8080/login.html> e entre com a conta criada.
+
+## Permissões
+
+| Recurso | ADMIN | USER |
+| --- | --- | --- |
+| Consultar catálogo de livros | Sim | Sim |
+| Criar, editar e excluir livros | Sim | Não |
+| Consultar e gerenciar leitores | Sim | Não |
+| Consultar e gerenciar empréstimos | Sim | Não |
+
+As páginas enviam `Authorization: Bearer <token>` nas chamadas da API. Respostas `401` encerram a sessão na interface e pedem novo login. Os dados de perfil salvos no navegador são apenas uma indicação visual: a autorização efetiva ocorre no servidor.
+
+Na tela **Usuários**, a senha é opcional. Sem senha, o cadastro funciona como leitor para empréstimos, sem acesso ao sistema. Com senha de 8 caracteres a 72 bytes, a conta pode consultar o catálogo.
+
+A API cria contas `USER`, ignora tentativas de cadastrar `ADMIN` e preserva o perfil nas edições. Senha vazia/omitida na edição mantém a senha anterior; uma nova senha válida substitui o hash.
 
 ## Endpoints
 
 | Método | Caminho | Operação |
 | --- | --- | --- |
-| POST | `/api/auth/login` | Emitir token de demonstração |
+| POST | `/api/auth/login` | Login público |
 | GET / POST | `/api/livros` | Listar / cadastrar livros |
 | GET / PUT / DELETE | `/api/livros/{id}` | Buscar / atualizar / excluir livro |
-| GET / POST | `/api/usuarios` | Listar / cadastrar usuários |
-| GET / PUT / DELETE | `/api/usuarios/{id}` | Buscar / atualizar / excluir usuário |
+| GET / POST | `/api/usuarios` | Listar / cadastrar leitores |
+| GET / PUT / DELETE | `/api/usuarios/{id}` | Buscar / atualizar / excluir leitor |
 | GET / POST | `/api/emprestimos` | Listar / realizar empréstimo |
 | GET | `/api/emprestimos/ativos` | Listar ativos e atrasados |
 | PUT | `/api/emprestimos/devolucao/{id}` | Registrar devolução |
 | PUT | `/api/emprestimos/renovar/{id}` | Renovar empréstimo |
 
-Exemplo de corpo JSON para `POST /api/emprestimos`, usando IDs existentes:
+Login:
 
 ```json
-{
-  "livroId": 1,
-  "usuarioId": 1,
-  "dias": 7
-}
+{"email": "seu-email@example.com", "senha": "sua-senha"}
 ```
 
-Para renovar, envie `{"dias": 7}`. Muitas operações retornam `true` ou `false`; o tratamento de erros HTTP ainda pode ser padronizado.
+Empréstimo, com IDs existentes e token de administrador:
 
-## Login: comportamento atual
+```json
+{"livroId": 1, "usuarioId": 1, "dias": 7}
+```
 
-`POST /api/auth/login` recebe `email` e `senha`. O e-mail precisa existir em `usuarios`, e a implementação atual compara a senha com o valor demonstrativo `admin123`, em vez de validar a senha armazenada.
+Para renovar, envie `{"dias": 7}`. As operações de negócio mantêm o retorno `true`/`false`; a autenticação usa `400` para entrada inválida, `401` para credenciais/token inválidos e `403` para falta de permissão.
 
-`JwtFilter` ainda apenas encaminha a requisição: a presença do JWT não significa que as rotas estejam protegidas. A autenticação é uma implementação parcial e deve evoluir antes de disponibilizar dados reais.
+## Testar
+
+```powershell
+.\mvnw.cmd --batch-mode --no-transfer-progress verify
+node --test src/test/js/auth.test.cjs
+```
+
+No Linux/macOS, substitua `.\mvnw.cmd` por `sh ./mvnw`. Os testes Java usam **H2 em memória**, sem credenciais ou conexão com o MySQL local.
+
+A suíte cobre login, assinatura/expiração de JWT, permissões, proteção dos hashes, criação/edição de credenciais, bootstrap e persistência pelos três repositórios. Os testes JavaScript verificam o envio do token, tratamento de sessão e scripts das páginas.
+
+O workflow em [Actions](https://github.com/Loadingzs/biblioteca-api/actions) executa essas verificações nos pushes e pull requests, sem segredos externos.
 
 ## Estrutura
 
 ```text
-src/main/
-├── java/com/biblioteca/api/
-│   ├── config/          # JWT e filtro
-│   ├── controller/      # Endpoints REST
-│   ├── domain/          # Modelos
-│   ├── dto/             # Requisição/resposta de login
-│   ├── infrastructure/  # Conexão JDBC
-│   ├── repository/      # SQL e persistência
-│   └── service/         # Regras de negócio
-└── resources/
-    ├── application.properties
-    └── static/          # Páginas, CSS e JavaScript
-
-src/test/java/com/biblioteca/api/
+database/schema.sql              # Esquema inicial MySQL
+src/main/java/com/biblioteca/api/
+├── config/                      # Segurança, JWT e bootstrap
+├── controller/                  # Endpoints REST
+├── domain/                      # Modelos; senha não é serializada
+├── dto/                         # Login
+├── repository/                  # JDBC com DataSource injetado
+└── service/                     # Regras e codificação de senhas
+src/main/resources/
+├── application.properties       # Configuração por ambiente
+└── static/                      # Interface web
+src/test/                        # Testes Java, JavaScript e esquema H2
+docs/autenticacao.md              # Migração e comportamento das credenciais
 ```
 
-## Testes
+## Evolução
 
-O teste de serviço existente verifica a recusa de prazo de empréstimo inválido sem acessar os repositórios:
+**[Desktop](https://github.com/Loadingzs/sistema-biblioteca) → [núcleo refatorado](https://github.com/Loadingzs/sistema-biblioteca-web) → API web.**
 
-```powershell
-.\mvnw.cmd "-Dtest=EmprestimoServiceTest" test
-```
-
-Para a suíte completa, incluindo o carregamento do contexto Spring, prepare também a configuração do banco e execute:
-
-```powershell
-.\mvnw.cmd test
-```
-
-No Linux/macOS, substitua `.\mvnw.cmd` por `sh ./mvnw`.
-
-## Histórico e próximos passos
-
-A sequência do projeto é **[desktop](https://github.com/Loadingzs/sistema-biblioteca) → [núcleo refatorado](https://github.com/Loadingzs/sistema-biblioteca-web) → API web**.
-
-Próximos passos: completar autenticação e autorização, unificar a configuração de conexão, ampliar testes, adicionar transações e documentar a API com OpenAPI.
+Próximos passos: transações nas operações de empréstimo, padronização dos erros de negócio, documentação OpenAPI e recuperação de senha. Para hospedagem, configure HTTPS, segredos próprios e limites de tentativas de login.
 
 ## Licença
 

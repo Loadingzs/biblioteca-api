@@ -1,0 +1,26 @@
+name: Testes da Biblioteca API
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Testes Java e integração HTTP com H2
+        run: sh ./mvnw --batch-mode --no-transfer-progress verify
+      - name: Testes da autenticação na interface
+        run: node --test src/test/js/auth.test.cjs

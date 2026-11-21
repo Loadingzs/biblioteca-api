@@ -667,3 +667,5 @@ body.dark-mode .toast-message { color: #aaa; }
 body.dark-mode .page-transition {
     background: rgba(15, 15, 26, 0.95);
 }
+/* Controles administrativos não aparecem no catálogo de leitores. */
+.read-only .btn-primary, .read-only .btn-edit, .read-only .btn-delete { display: none; }

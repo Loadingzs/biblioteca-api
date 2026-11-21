@@ -1,7 +1,7 @@
 package com.biblioteca.api.repository;
 
 import com.biblioteca.api.domain.Emprestimo;  // ← ADICIONE ESTE IMPORT
-import com.biblioteca.api.infrastructure.ConnectionFactory;
+import javax.sql.DataSource;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -10,12 +10,18 @@ import org.springframework.stereotype.Repository;  // ← ADICIONE
 @Repository
 
 public class EmprestimoRepository {
+
+    private final DataSource dataSource;
+
+    public EmprestimoRepository(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
     
     // ==================== CREATE ====================
     public boolean salvar(Emprestimo emprestimo) {
         String sql = "INSERT INTO emprestimos (id_livro, id_usuario, data_emprestimo, data_devolucao_prevista, status) VALUES (?, ?, ?, ?, ?)";
         
-        try (Connection conn = ConnectionFactory.getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             
             stmt.setInt(1, emprestimo.getLivroId());
@@ -50,7 +56,7 @@ public class EmprestimoRepository {
         List<Emprestimo> emprestimos = new ArrayList<>();
         String sql = "SELECT * FROM emprestimos ORDER BY data_emprestimo DESC";
         
-        try (Connection conn = ConnectionFactory.getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql);
              ResultSet rs = stmt.executeQuery()) {
             
@@ -70,7 +76,7 @@ public class EmprestimoRepository {
         String sql = "SELECT * FROM emprestimos WHERE id = ?";
         Emprestimo emprestimo = null;
         
-        try (Connection conn = ConnectionFactory.getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
             stmt.setInt(1, id);
@@ -93,7 +99,7 @@ public class EmprestimoRepository {
         String sql = "UPDATE emprestimos SET id_livro = ?, id_usuario = ?, data_emprestimo = ?, " +
                      "data_devolucao_prevista = ?, data_devolucao_real = ?, status = ? WHERE id = ?";
         
-        try (Connection conn = ConnectionFactory.getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
             stmt.setInt(1, emprestimo.getLivroId());
@@ -129,7 +135,7 @@ public class EmprestimoRepository {
     public boolean deletar(int id) {
         String sql = "DELETE FROM emprestimos WHERE id = ?";
         
-        try (Connection conn = ConnectionFactory.getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
             stmt.setInt(1, id);
@@ -156,7 +162,7 @@ public class EmprestimoRepository {
         List<Emprestimo> emprestimos = new ArrayList<>();
         String sql = "SELECT * FROM emprestimos WHERE id_usuario = ? ORDER BY data_emprestimo DESC";
         
-        try (Connection conn = ConnectionFactory.getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
             stmt.setInt(1, usuarioId);
@@ -179,7 +185,7 @@ public class EmprestimoRepository {
         List<Emprestimo> emprestimos = new ArrayList<>();
         String sql = "SELECT * FROM emprestimos WHERE id_livro = ? ORDER BY data_emprestimo DESC";
         
-        try (Connection conn = ConnectionFactory.getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
             stmt.setInt(1, livroId);
@@ -203,7 +209,7 @@ public class EmprestimoRepository {
         List<Emprestimo> emprestimos = new ArrayList<>();
         String sql = "SELECT * FROM emprestimos WHERE status IN ('ATIVO', 'ATRASADO') ORDER BY data_devolucao_prevista ASC";
 
-        try (Connection conn = ConnectionFactory.getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql);
              ResultSet rs = stmt.executeQuery()) {
 
@@ -222,7 +228,7 @@ public class EmprestimoRepository {
     public boolean registrarDevolucao(int emprestimoId, Date dataDevolucaoReal, String status) {
         String sql = "UPDATE emprestimos SET data_devolucao_real = ?, status = ? WHERE id = ?";
         
-        try (Connection conn = ConnectionFactory.getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
             stmt.setDate(1, dataDevolucaoReal);
@@ -248,7 +254,7 @@ public class EmprestimoRepository {
     public boolean usuarioTemEmprestimosAtivos(int usuarioId) {
         String sql = "SELECT COUNT(*) FROM emprestimos WHERE id_usuario = ? AND status IN ('ATIVO', 'ATRASADO')";
         
-        try (Connection conn = ConnectionFactory.getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
             stmt.setInt(1, usuarioId);
@@ -270,7 +276,7 @@ public class EmprestimoRepository {
     public int contarEmprestimosAtivos() {
         String sql = "SELECT COUNT(*) FROM emprestimos WHERE status IN ('ATIVO', 'ATRASADO')";
         
-        try (Connection conn = ConnectionFactory.getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql);
              ResultSet rs = stmt.executeQuery()) {
             

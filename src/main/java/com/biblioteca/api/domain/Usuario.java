@@ -1,13 +1,15 @@
 package com.biblioteca.api.domain;
 
 import java.time.LocalDate;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Usuario {
     private int id;
     private String nome;
     private String email;
     private String telefone;
-    private String senha;           // NOVO - senha criptografada
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private String senha;
     private String role;            // NOVO - ADMIN ou USER
     private LocalDate dataCadastro;
     

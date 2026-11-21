@@ -169,21 +169,42 @@ function escapeHtml(str) {
 // ===== AUTHENTICATION =====
 async function fetchWithAuth(url, options = {}) {
     const token = localStorage.getItem('token');
-    options.headers = {
-        ...options.headers,
-        'Authorization': token ? `Bearer ${token}` : '',
-        'Content-Type': 'application/json'
-    };
-    return fetch(url, options);
+    if (!token) {
+        window.location.replace('login.html');
+        throw new Error('Autenticação necessária.');
+    }
+    const headers = new Headers(options.headers);
+    headers.set('Authorization', 'Bearer ' + token);
+    if (options.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
+    const response = await fetch(url, { ...options, headers });
+    if (response.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('userEmail');
+        localStorage.removeItem('userRole');
+        window.location.replace('login.html');
+        throw new Error('Sua sessão expirou. Entre novamente.');
+    }
+    if (response.status === 403) throw new Error('Acesso restrito à administração.');
+    return response;
 }
 
 function checkAuth() {
-    const token = localStorage.getItem('token');
-    const isLoginPage = window.location.pathname.includes('login.html') || window.location.pathname.endsWith('.html') === false;
-    
-    if (!token && !isLoginPage) {
-        window.location.href = 'login.html';
+    if (!localStorage.getItem('token')) {
+        window.location.replace('login.html');
+        return false;
     }
+    if (localStorage.getItem('userRole') !== 'ADMIN') {
+        document.body.classList.add('read-only');
+        document.querySelectorAll('.nav a').forEach(link => {
+            if (!(link.getAttribute('onclick') || '').includes('livros.html')) link.hidden = true;
+        });
+        const current = window.location.pathname.split('/').pop();
+        if (current !== 'livros.html') {
+            window.location.replace('livros.html');
+            return false;
+        }
+    }
+    return true;
 }
 
 function logout() {
@@ -241,11 +262,13 @@ async function fazerLogin(event) {
         
         const resultado = await response.json();
         
-        if (resultado.success) {
-            alert('✅ Login realizado com sucesso!');
-            window.location.href = 'index.html';
+        if (response.ok && resultado.token) {
+            localStorage.setItem('token', resultado.token);
+            localStorage.setItem('userEmail', resultado.email);
+            localStorage.setItem('userRole', resultado.role);
+            window.location.href = resultado.role === 'ADMIN' ? 'index.html' : 'livros.html';
         } else {
-            alert('❌ Email ou senha inválidos! Use: admin@biblioteca.com / admin123');
+            alert('Email ou senha inválidos.');
         }
     } catch (error) {
         console.error('Erro:', error);
@@ -259,10 +282,10 @@ async function fazerLogin(event) {
 async function carregarDashboard() {
     try {
         const [responseLivros, responseUsuarios, responseEmprestimosAtivos, responseEmprestimos] = await Promise.all([
-            fetch(`${API_URL}/livros`),
-            fetch(`${API_URL}/usuarios`),
-            fetch(`${API_URL}/emprestimos/ativos`),
-            fetch(`${API_URL}/emprestimos`)
+            fetchWithAuth(`${API_URL}/livros`),
+            fetchWithAuth(`${API_URL}/usuarios`),
+            fetchWithAuth(`${API_URL}/emprestimos/ativos`),
+            fetchWithAuth(`${API_URL}/emprestimos`)
         ]);
 
         const livros = await responseLivros.json();
@@ -299,8 +322,8 @@ async function carregarDashboard() {
 
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${usuario?.nome || 'N/A'}</td>
-                    <td>${livro?.titulo || 'N/A'}</td>
+                    <td>${escapeHtml(usuario?.nome || 'N/A')}</td>
+                    <td>${escapeHtml(livro?.titulo || 'N/A')}</td>
                     <td>${emp.dataEmprestimo || '-'}</td>
                     <td class="${statusClass}">${emp.status || '-'}</td>
                 `;
@@ -318,14 +341,14 @@ async function carregarDashboard() {
 
 async function buscarUsuarioPorId(id) {
     try {
-        const response = await fetch(`${API_URL}/usuarios/${id}`);
+        const response = await fetchWithAuth(`${API_URL}/usuarios/${id}`);
         return await response.json();
     } catch { return null; }
 }
 
 async function buscarLivroPorId(id) {
     try {
-        const response = await fetch(`${API_URL}/livros/${id}`);
+        const response = await fetchWithAuth(`${API_URL}/livros/${id}`);
         return await response.json();
     } catch { return null; }
 }
@@ -333,7 +356,7 @@ async function buscarLivroPorId(id) {
 // Inicializar dashboard
 document.addEventListener('DOMContentLoaded', function() {
     if (window.location.pathname.includes('index.html') || window.location.pathname === '/' || window.location.pathname.endsWith('/')) {
-        carregarDashboard();
+        if (checkAuth()) carregarDashboard();
     }
     
     const anoElement = document.getElementById('anoAtual');

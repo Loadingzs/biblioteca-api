@@ -130,7 +130,7 @@
             if (!livrosContainer.tabela) return;
             livrosContainer.tabela.innerHTML = '<tr><td colspan="6" class="table-loading"><div class="spinner-small"></div><br>Carregando livros...</td></tr>';
             try {
-                const response = await fetch(`${API_URL}/livros`);
+                const response = await fetchWithAuth(`${API_URL}/livros`);
                 if (!response.ok) throw new Error('Erro ao carregar livros');
                 livros = await response.json();
                 livrosFiltrados = [...livros];
@@ -155,9 +155,9 @@
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td style="padding: 0.75rem;">${livro.id}</td>
-                    <td style="padding: 0.75rem;">${livro.titulo}</td>
-                    <td style="padding: 0.75rem;">${livro.autor}</td>
-                    <td style="padding: 0.75rem;">${livro.isbn}</td>
+                    <td style="padding: 0.75rem;">${escapeHtml(livro.titulo)}</td>
+                    <td style="padding: 0.75rem;">${escapeHtml(livro.autor)}</td>
+                    <td style="padding: 0.75rem;">${escapeHtml(livro.isbn)}</td>
                     <td style="padding: 0.75rem;">${livro.disponivel ? '✅ Disponível' : '❌ Indisponível'}</td>
                     <td style="padding: 0.75rem;">
                         <button class="btn-edit" type="button" onclick="editarLivro(${livro.id})">✏️</button>
@@ -212,7 +212,7 @@
             try {
                 const url = editandoId ? `${API_URL}/livros/${editandoId}` : `${API_URL}/livros`;
                 const method = editandoId ? 'PUT' : 'POST';
-                const response = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(livro) });
+                const response = await fetchWithAuth(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(livro) });
                 if (!response.ok) throw new Error('Erro ao salvar');
                 showToast('success', null, editandoId ? '✅ Livro atualizado!' : '✅ Livro cadastrado!');
                 fecharModal();
@@ -223,7 +223,7 @@
         async function deletarLivro(id) {
             if (!(await showConfirm('⚠️ Tem certeza?'))) return;
             try {
-                const response = await fetch(`${API_URL}/livros/${id}`, { method: 'DELETE' });
+                const response = await fetchWithAuth(`${API_URL}/livros/${id}`, { method: 'DELETE' });
                 if (!response.ok) throw new Error('Erro ao excluir');
                 showToast('success', null, '✅ Livro excluído!');
                 carregarLivros();
@@ -231,7 +231,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            checkAuth();
+            if (!checkAuth()) return;
             initTheme();
             carregarLivros();
             if (livrosContainer.busca) livrosContainer.busca.addEventListener('keyup', filtrarLivros);

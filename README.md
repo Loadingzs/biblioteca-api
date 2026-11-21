@@ -1,86 +1,45 @@
-# 📚 Biblioteca Web - Sistema de Gerenciamento de Biblioteca
+# 📚 Biblioteca API — Java e Spring Boot
 
-![Java](https://img.shields.io/badge/Java-17-blue.svg)
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.6-green.svg)
-![MySQL](https://img.shields.io/badge/MySQL-8.0-orange.svg)
-![License](https://img.shields.io/badge/License-MIT-lightgrey.svg)
+Aplicação de gerenciamento de biblioteca com **API REST, páginas web e persistência MySQL**. Evolui o núcleo refatorado do projeto para expor livros, usuários e empréstimos por HTTP.
 
-## 📋 Sobre o Projeto
+## Funcionalidades
 
-Sistema completo de gerenciamento de biblioteca desenvolvido como **Projeto Integrador**. O sistema permite o controle de acervo, cadastro de usuários e gerenciamento de empréstimos de livros.
+- Cadastro, listagem, edição e exclusão de livros e usuários.
+- Empréstimos, listagem de ativos, renovação e devolução.
+- Controle de disponibilidade, limite de três empréstimos ativos/atrasados por usuário e multa de R$ 2,00 por dia de atraso.
+- Endpoint de login com emissão de JWT.
+- Páginas HTML com CSS e JavaScript servidas pela aplicação.
 
-### ✨ Funcionalidades
+## Tecnologias
 
-| Módulo | Funcionalidades |
-|--------|-----------------|
-| **Livros** | Cadastro, edição, exclusão, busca por título/autor/ISBN |
-| **Usuários** | Cadastro, edição, exclusão, busca por nome/email |
-| **Empréstimos** | Registrar empréstimo, devolução, renovação, cálculo de multas |
-| **Relatórios** | Estatísticas, livros disponíveis, empréstimos atrasados |
+| Área | Implementação |
+| --- | --- |
+| Linguagem | Java 17, conforme `pom.xml` |
+| Servidor | Spring Boot 4.0.6, Spring Web |
+| Persistência | JDBC, MySQL Connector/J e SQL nos repositórios |
+| Token | JJWT 0.12.3 |
+| Interface | HTML, CSS e JavaScript |
+| Build e testes | Maven Wrapper, JUnit 5 e Mockito |
 
-### 🎯 Regras de Negócio
+O starter de JPA está no `pom.xml`, mas as operações de dados atuais usam JDBC. O esquema abaixo deve ser preparado manualmente.
 
-- ✅ Máximo de **3 empréstimos ativos** por usuário
-- ✅ Multa por atraso: **R$ 2,00 por dia**
-- ✅ Validação de **ISBN duplicado** (ignora hífens)
-- ✅ Validação de **email duplicado** e formato
-- ✅ Controle automático de disponibilidade de livros
+## Executar localmente
 
----
+### 1. Clonar
 
-## 🛠️ Tecnologias Utilizadas
-
-### Back-end
-| Tecnologia | Versão |
-|------------|--------|
-| Java | 17+ |
-| Spring Boot | 4.0.6 |
-| Spring Web MVC | - |
-| Spring Data JPA | - |
-| Maven | - |
-
-### Front-end
-| Tecnologia | Descrição |
-|------------|-----------|
-| HTML5 | Estrutura das páginas |
-| CSS3 | Estilização e responsividade |
-| JavaScript | Interatividade e consumo da API |
-
-### Banco de Dados
-| Tecnologia | Descrição |
-|------------|-----------|
-| MySQL | 8.0+ |
-| JDBC | Conexão e operações |
-
-### Ferramentas
-| Ferramenta | Uso |
-|------------|-----|
-| Git | Controle de versão |
-| GitHub | Hospedagem do código |
-| NetBeans | IDE de desenvolvimento |
-
-
-
----
-
-## 🚀 Como Executar o Projeto
-
-### Pré-requisitos
-
-- [Java 17+](https://www.oracle.com/java/technologies/downloads/)
-- [MySQL 8.0+](https://dev.mysql.com/downloads/)
-- [NetBeans IDE](https://netbeans.apache.org/) (ou outra IDE)
-
-### Passo 1: Clone o repositório
+Tenha JDK 17 ou superior, Git e MySQL instalados.
 
 ```bash
 git clone https://github.com/Loadingzs/biblioteca-api.git
 cd biblioteca-api
-Passo 2: Configure o banco de dados
-No MySQL, crie o banco e as tabelas:
+```
 
-sql
-CREATE DATABASE sistema_biblioteca;
+### 2. Preparar uma base de desenvolvimento
+
+Execute no MySQL:
+
+```sql
+CREATE DATABASE IF NOT EXISTS sistema_biblioteca CHARACTER SET utf8mb4;
 USE sistema_biblioteca;
 
 CREATE TABLE livros (
@@ -97,6 +56,8 @@ CREATE TABLE usuarios (
     nome VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     telefone VARCHAR(20),
+    senha VARCHAR(255),
+    role VARCHAR(20) DEFAULT 'USER',
     data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -111,88 +72,114 @@ CREATE TABLE emprestimos (
     FOREIGN KEY (id_livro) REFERENCES livros(id),
     FOREIGN KEY (id_usuario) REFERENCES usuarios(id)
 );
-Passo 3: Configure a conexão
-Edite src/main/resources/application.properties:
+```
 
-properties
-spring.datasource.url=jdbc:mysql://localhost:3306/sistema_biblioteca
-spring.datasource.username=root
-spring.datasource.password=SUA_SENHA_AQUI
-Passo 4: Execute a aplicação
-No NetBeans:
+As colunas `senha` e `role` são utilizadas pelo `UsuarioRepository` desta versão. Se já usa um banco das versões anteriores, confira essas diferenças antes de reutilizá-lo.
 
-Clique com botão direito no projeto
+### 3. Configurar as duas conexões
 
-Run ou Clean and Build + Run
+A aplicação possui duas configurações que precisam apontar para o mesmo banco:
 
-No terminal:
+| Arquivo | Valores a ajustar |
+| --- | --- |
+| `src/main/resources/application.properties` | `spring.datasource.url`, `spring.datasource.username` e `spring.datasource.password` |
+| `src/main/java/com/biblioteca/api/infrastructure/ConnectionFactory.java` | `URL`, `USER` e `PASSWORD` usados pelo JDBC |
 
-bash
-./mvnw spring-boot:run
-Passo 5: Acesse o sistema
-URL: http://localhost:8080
+Em `application.properties`, configure também `jwt.secret` com uma chave aleatória própria de pelo menos 32 bytes e `jwt.expiration` com a duração em milissegundos. Não publique suas credenciais locais.
 
-Login: admin@biblioteca.com
+### 4. Iniciar
 
-Senha: admin123
+No PowerShell:
 
-📊 API Endpoints
-Método	Endpoint	Descrição
-GET	/api/livros	Listar todos os livros
-GET	/api/livros/{id}	Buscar livro por ID
-POST	/api/livros	Cadastrar novo livro
-PUT	/api/livros/{id}	Atualizar livro
-DELETE	/api/livros/{id}	Excluir livro
-GET	/api/usuarios	Listar todos os usuários
-POST	/api/usuarios	Cadastrar novo usuário
-GET	/api/emprestimos	Listar todos os empréstimos
-POST	/api/emprestimos	Realizar empréstimo
-PUT	/api/emprestimos/devolucao/{id}	Registrar devolução
-🧪 Testes
-O projeto inclui testes unitários JUnit:
+```powershell
+.\mvnw.cmd spring-boot:run
+```
 
-bash
-./mvnw test
-Testes implementados:
-✅ Cálculo de multa (sem atraso, com atraso de 3 e 10 dias)
+No Linux/macOS:
 
-✅ Validação de campos obrigatórios
+```bash
+sh ./mvnw spring-boot:run
+```
 
-✅ Validação de ISBN duplicado
+Acesse <http://localhost:8080> ou a página <http://localhost:8080/login.html>.
 
-🐛 Bugtracking
-Issues registradas no GitHub:
+## Endpoints
 
-Issue	Descrição	Status
-#1	Adicionar README	✅ Concluído
-#2	Validar ISBN duplicado no back-end	✅ Concluído
-#3	Campos obrigatórios front-end	✅ Concluído
-#4	Paginação nas tabelas	⏳ Pendente
-#5	Loading/spinner	⏳ Pendente
-📈 Melhorias Futuras
-Paginação nas tabelas
+| Método | Caminho | Operação |
+| --- | --- | --- |
+| POST | `/api/auth/login` | Emitir token de demonstração |
+| GET / POST | `/api/livros` | Listar / cadastrar livros |
+| GET / PUT / DELETE | `/api/livros/{id}` | Buscar / atualizar / excluir livro |
+| GET / POST | `/api/usuarios` | Listar / cadastrar usuários |
+| GET / PUT / DELETE | `/api/usuarios/{id}` | Buscar / atualizar / excluir usuário |
+| GET / POST | `/api/emprestimos` | Listar / realizar empréstimo |
+| GET | `/api/emprestimos/ativos` | Listar ativos e atrasados |
+| PUT | `/api/emprestimos/devolucao/{id}` | Registrar devolução |
+| PUT | `/api/emprestimos/renovar/{id}` | Renovar empréstimo |
 
-Autenticação com JWT
+Exemplo de corpo JSON para `POST /api/emprestimos`, usando IDs existentes:
 
-Dashboard com gráficos estatísticos
+```json
+{
+  "livroId": 1,
+  "usuarioId": 1,
+  "dias": 7
+}
+```
 
-Relatórios em PDF
+Para renovar, envie `{"dias": 7}`. Muitas operações retornam `true` ou `false`; o tratamento de erros HTTP ainda pode ser padronizado.
 
-Deploy na nuvem (Render/Railway)
+## Login: comportamento atual
 
-👨‍💻 Autor
-Maykon (Loadingzs)
+`POST /api/auth/login` recebe `email` e `senha`. O e-mail precisa existir em `usuarios`, e a implementação atual compara a senha com o valor demonstrativo `admin123`, em vez de validar a senha armazenada.
 
-GitHub: @Loadingzs
+`JwtFilter` ainda apenas encaminha a requisição: a presença do JWT não significa que as rotas estejam protegidas. A autenticação é uma implementação parcial e deve evoluir antes de disponibilizar dados reais.
 
-Projeto original desktop: sistema-biblioteca
+## Estrutura
 
-📝 Licença
-Este projeto está sob a licença MIT. Veja o arquivo LICENSE para mais detalhes.
+```text
+src/main/
+├── java/com/biblioteca/api/
+│   ├── config/          # JWT e filtro
+│   ├── controller/      # Endpoints REST
+│   ├── domain/          # Modelos
+│   ├── dto/             # Requisição/resposta de login
+│   ├── infrastructure/  # Conexão JDBC
+│   ├── repository/      # SQL e persistência
+│   └── service/         # Regras de negócio
+└── resources/
+    ├── application.properties
+    └── static/          # Páginas, CSS e JavaScript
 
-🙏 Agradecimentos
-Professores e orientadores do curso SENAC
+src/test/java/com/biblioteca/api/
+```
 
-Comunidade Java e Spring Boot
+## Testes
 
-Desenvolvido com ❤️ como parte do Projeto Integrador
+O teste de serviço existente verifica a recusa de prazo de empréstimo inválido sem acessar os repositórios:
+
+```powershell
+.\mvnw.cmd "-Dtest=EmprestimoServiceTest" test
+```
+
+Para a suíte completa, incluindo o carregamento do contexto Spring, prepare também a configuração do banco e execute:
+
+```powershell
+.\mvnw.cmd test
+```
+
+No Linux/macOS, substitua `.\mvnw.cmd` por `sh ./mvnw`.
+
+## Histórico e próximos passos
+
+A sequência do projeto é **[desktop](https://github.com/Loadingzs/sistema-biblioteca) → [núcleo refatorado](https://github.com/Loadingzs/sistema-biblioteca-web) → API web**.
+
+Próximos passos: completar autenticação e autorização, unificar a configuração de conexão, ampliar testes, adicionar transações e documentar a API com OpenAPI.
+
+## Licença
+
+O README original declara licença MIT; o arquivo `LICENSE` ainda não está incluído no repositório.
+
+## Autor
+
+**Maykon Dias** · [GitHub](https://github.com/Loadingzs) · [LinkedIn](https://www.linkedin.com/in/maykondias/)

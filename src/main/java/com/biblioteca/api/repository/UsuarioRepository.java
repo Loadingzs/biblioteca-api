@@ -1,7 +1,7 @@
 package com.biblioteca.api.repository;
 
 import com.biblioteca.api.domain.Usuario;
-import com.biblioteca.api.infrastructure.ConnectionFactory;
+import javax.sql.DataSource;
 import org.springframework.stereotype.Repository;
 import java.sql.*;
 import java.util.ArrayList;
@@ -9,12 +9,18 @@ import java.util.List;
 
 @Repository
 public class UsuarioRepository {
+
+    private final DataSource dataSource;
+
+    public UsuarioRepository(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
     
     // ==================== CREATE ====================
     public boolean salvar(Usuario usuario) {
         String sql = "INSERT INTO usuarios (nome, email, telefone, senha, role) VALUES (?, ?, ?, ?, ?)";
         
-        try (Connection conn = ConnectionFactory.getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             
             stmt.setString(1, usuario.getNome());
@@ -52,7 +58,7 @@ public class UsuarioRepository {
         List<Usuario> usuarios = new ArrayList<>();
         String sql = "SELECT * FROM usuarios ORDER BY nome";
         
-        try (Connection conn = ConnectionFactory.getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql);
              ResultSet rs = stmt.executeQuery()) {
             
@@ -72,7 +78,7 @@ public class UsuarioRepository {
         String sql = "SELECT * FROM usuarios WHERE id = ?";
         Usuario usuario = null;
         
-        try (Connection conn = ConnectionFactory.getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
             stmt.setInt(1, id);
@@ -92,15 +98,15 @@ public class UsuarioRepository {
     
     // ==================== UPDATE ====================
     public boolean atualizar(Usuario usuario) {
-        String sql = "UPDATE usuarios SET nome = ?, email = ?, telefone = ?, role = ? WHERE id = ?";
+        String sql = "UPDATE usuarios SET nome = ?, email = ?, telefone = ?, senha = COALESCE(?, senha) WHERE id = ?";
         
-        try (Connection conn = ConnectionFactory.getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
             stmt.setString(1, usuario.getNome());
             stmt.setString(2, usuario.getEmail());
             stmt.setString(3, usuario.getTelefone());
-            stmt.setString(4, usuario.getRole() != null ? usuario.getRole() : "USER");
+            stmt.setString(4, usuario.getSenha());
             stmt.setInt(5, usuario.getId());
             
             int rowsAffected = stmt.executeUpdate();
@@ -122,7 +128,7 @@ public class UsuarioRepository {
     public boolean atualizarSenha(int id, String novaSenha) {
         String sql = "UPDATE usuarios SET senha = ? WHERE id = ?";
         
-        try (Connection conn = ConnectionFactory.getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
             stmt.setString(1, novaSenha);
@@ -147,7 +153,7 @@ public class UsuarioRepository {
     public boolean deletar(int id) {
         String sql = "DELETE FROM usuarios WHERE id = ?";
         
-        try (Connection conn = ConnectionFactory.getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
             stmt.setInt(1, id);
@@ -173,7 +179,7 @@ public class UsuarioRepository {
         List<Usuario> usuarios = new ArrayList<>();
         String sql = "SELECT * FROM usuarios WHERE nome LIKE ? ORDER BY nome";
         
-        try (Connection conn = ConnectionFactory.getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
             stmt.setString(1, "%" + nome + "%");
@@ -195,7 +201,7 @@ public class UsuarioRepository {
         String sql = "SELECT * FROM usuarios WHERE email = ?";
         Usuario usuario = null;
         
-        try (Connection conn = ConnectionFactory.getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
             stmt.setString(1, email);
@@ -216,7 +222,7 @@ public class UsuarioRepository {
     public boolean emailExiste(String email) {
         String sql = "SELECT COUNT(*) FROM usuarios WHERE email = ?";
         
-        try (Connection conn = ConnectionFactory.getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
             stmt.setString(1, email);
@@ -237,7 +243,7 @@ public class UsuarioRepository {
     public int contar() {
         String sql = "SELECT COUNT(*) FROM usuarios";
         
-        try (Connection conn = ConnectionFactory.getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql);
              ResultSet rs = stmt.executeQuery()) {
             

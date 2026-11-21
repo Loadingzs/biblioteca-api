@@ -1,7 +1,7 @@
 package com.biblioteca.api.repository;
 
 import com.biblioteca.api.domain.Livro;
-import com.biblioteca.api.infrastructure.ConnectionFactory;
+import javax.sql.DataSource;
 import org.springframework.stereotype.Repository;  // ← ADICIONE
 import java.sql.*;
 import java.util.ArrayList;
@@ -10,12 +10,18 @@ import java.util.List;
 @Repository  
 
 public class LivroRepository {
+
+    private final DataSource dataSource;
+
+    public LivroRepository(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
     
     // ==================== CREATE ====================
     public boolean salvar(Livro livro) {
         String sql = "INSERT INTO livros (titulo, autor, isbn, disponivel) VALUES (?, ?, ?, ?)";
         
-        try (Connection conn = ConnectionFactory.getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             
             stmt.setString(1, livro.getTitulo());
@@ -48,7 +54,7 @@ public Livro buscarPorIsbnExato(String isbn) {
     String sql = "SELECT * FROM livros WHERE isbn = ?";
     Livro livro = null;
     
-    try (Connection conn = ConnectionFactory.getConnection();
+    try (Connection conn = dataSource.getConnection();
          PreparedStatement stmt = conn.prepareStatement(sql)) {
         
         stmt.setString(1, isbn);
@@ -71,7 +77,7 @@ public Livro buscarPorIsbnExato(String isbn) {
         List<Livro> livros = new ArrayList<>();
         String sql = "SELECT * FROM livros";
         
-        try (Connection conn = ConnectionFactory.getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql);
              ResultSet rs = stmt.executeQuery()) {
             
@@ -91,7 +97,7 @@ public Livro buscarPorIsbnExato(String isbn) {
         String sql = "SELECT * FROM livros WHERE id = ?";
         Livro livro = null;
         
-        try (Connection conn = ConnectionFactory.getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
             stmt.setInt(1, id);
@@ -113,7 +119,7 @@ public Livro buscarPorIsbnExato(String isbn) {
     public boolean atualizar(Livro livro) {
         String sql = "UPDATE livros SET titulo = ?, autor = ?, isbn = ?, disponivel = ? WHERE id = ?";
         
-        try (Connection conn = ConnectionFactory.getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
             stmt.setString(1, livro.getTitulo());
@@ -141,7 +147,7 @@ public Livro buscarPorIsbnExato(String isbn) {
     public boolean deletar(int id) {
         String sql = "DELETE FROM livros WHERE id = ?";
         
-        try (Connection conn = ConnectionFactory.getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
             stmt.setInt(1, id);
@@ -167,7 +173,7 @@ public Livro buscarPorIsbnExato(String isbn) {
         List<Livro> livros = new ArrayList<>();
         String sql = "SELECT * FROM livros WHERE titulo LIKE ?";
         
-        try (Connection conn = ConnectionFactory.getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
             stmt.setString(1, "%" + titulo + "%");
@@ -189,7 +195,7 @@ public Livro buscarPorIsbnExato(String isbn) {
         List<Livro> livros = new ArrayList<>();
         String sql = "SELECT * FROM livros WHERE autor LIKE ?";
         
-        try (Connection conn = ConnectionFactory.getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
             stmt.setString(1, "%" + autor + "%");
@@ -211,7 +217,7 @@ public Livro buscarPorIsbnExato(String isbn) {
         List<Livro> livros = new ArrayList<>();
         String sql = "SELECT * FROM livros WHERE isbn LIKE ?";
         
-        try (Connection conn = ConnectionFactory.getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
             stmt.setString(1, "%" + isbn + "%");
@@ -232,7 +238,7 @@ public Livro buscarPorIsbnExato(String isbn) {
     public boolean atualizarDisponibilidade(int idLivro, boolean disponivel) {
         String sql = "UPDATE livros SET disponivel = ? WHERE id = ?";
         
-        try (Connection conn = ConnectionFactory.getConnection();
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
             stmt.setBoolean(1, disponivel);
@@ -273,7 +279,7 @@ public Livro buscarPorIsbnExato(String isbn) {
     public boolean isbnExiste(String isbn) {
     String sql = "SELECT COUNT(*) FROM livros WHERE isbn = ?";
     
-    try (Connection conn = ConnectionFactory.getConnection();
+    try (Connection conn = dataSource.getConnection();
          PreparedStatement stmt = conn.prepareStatement(sql)) {
         
         stmt.setString(1, isbn);

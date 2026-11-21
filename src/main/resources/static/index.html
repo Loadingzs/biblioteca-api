@@ -94,18 +94,5 @@
     </footer>
 
     <script src="js/scripts.js"></script>
-    <script>
-        // Use funções globais definidas em js/scripts.js e inicializa o dashboard
-        document.addEventListener('DOMContentLoaded', () => {
-            checkAuth();
-            document.body.classList.add('fade-in');
-            setTimeout(() => document.body.classList.remove('fade-in'), 500);
-            initTheme();
-            const themeToggle = document.getElementById('themeToggle');
-            if (themeToggle) themeToggle.addEventListener('click', toggleTheme);
-            if (typeof carregarDashboard === 'function') carregarDashboard();
-            const ano = document.getElementById('anoAtual'); if (ano) ano.innerText = new Date().getFullYear();
-        });
-    </script>
 </body>
 </html>

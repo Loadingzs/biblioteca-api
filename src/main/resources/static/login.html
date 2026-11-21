@@ -187,16 +187,12 @@
                 <button type="submit" class="btn-login" id="btnLogin">Entrar no Sistema</button>
             </form>
             
-            <div class="info-login">
-                <p>🔐 Credenciais de demonstração:</p>
-                <p>📧 E-mail: <code>admin@biblioteca.com</code></p>
-                <p>🔑 Senha: <code>admin123</code></p>
-            </div>
+            <div class="info-login"><p>Entre com o e-mail e a senha da sua conta.</p></div>
         </div>
     </div>
 
     <script>
-        const API_URL = 'http://localhost:8080/api';
+        const API_URL = '/api';
 
         function showToast(message, isError = false) {
             const toast = document.createElement('div');
@@ -237,7 +233,7 @@
                     
                     // Redirecionar para o dashboard
                     setTimeout(() => {
-                        window.location.href = 'index.html';
+                        window.location.href = data.role === 'ADMIN' ? 'index.html' : 'livros.html';
                     }, 1000);
                 } else {
                     errorDiv.textContent = data.message || '❌ Email ou senha inválidos!';

@@ -112,7 +112,7 @@
             if (!emprestimosContainer.tabela) return;
             emprestimosContainer.tabela.innerHTML = '<tr><td colspan="7" class="table-loading">Carregando empréstimos...</td></tr>';
             try {
-                const [rL, rU, rE] = await Promise.all([fetch(`${API_URL}/livros`), fetch(`${API_URL}/usuarios`), fetch(`${API_URL}/emprestimos`)]);
+                const [rL, rU, rE] = await Promise.all([fetchWithAuth(`${API_URL}/livros`), fetchWithAuth(`${API_URL}/usuarios`), fetchWithAuth(`${API_URL}/emprestimos`)]);
                 livros = await rL.json();
                 usuarios = await rU.json();
                 emprestimos = await rE.json();
@@ -142,8 +142,8 @@
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${e.id}</td>
-                    <td>${u.nome || 'N/A'}</td>
-                    <td>${l.titulo || 'N/A'}</td>
+                    <td>${escapeHtml(u.nome || 'N/A')}</td>
+                    <td>${escapeHtml(l.titulo || 'N/A')}</td>
                     <td>${e.dataEmprestimo ? e.dataEmprestimo.split('T')[0] : '-'}</td>
                     <td>${e.dataDevolucaoPrevista || '-'}</td>
                     <td class="${sc}">${e.status || '-'}</td>
@@ -183,7 +183,7 @@
             const dias = Math.ceil((new Date(dp) - new Date()) / 86400000);
             if (dias <= 0) { showToast('error', null, '❌ Data deve ser futura!'); return; }
             try {
-                const res = await fetch(`${API_URL}/emprestimos`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ livroId: lid, usuarioId: uid, dias }) });
+                const res = await fetchWithAuth(`${API_URL}/emprestimos`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ livroId: lid, usuarioId: uid, dias }) });
                 if (res.ok) { showToast('success', null, '✅ Empréstimo realizado!'); fecharModalEmprestimo(); carregarDados(); } else showToast('error', null, '❌ Erro');
             } catch (e) { showToast('error', null, '❌ Erro de conexão'); console.error(e); }
         }
@@ -191,7 +191,7 @@
         async function registrarDevolucao(id) {
             if (!(await showConfirm('📖 Registrar devolução?'))) return;
             try {
-                const res = await fetch(`${API_URL}/emprestimos/devolucao/${id}`, { method: 'PUT' });
+                const res = await fetchWithAuth(`${API_URL}/emprestimos/devolucao/${id}`, { method: 'PUT' });
                 if (res.ok) { showToast('success', null, '✅ Devolução registrada!'); carregarDados(); } else showToast('error', null, '❌ Erro');
             } catch (e) { showToast('error', null, '❌ Erro de conexão'); console.error(e); }
         }
@@ -199,7 +199,7 @@
         function fecharModalEmprestimo() { if (emprestimosContainer.modal) emprestimosContainer.modal.style.display = 'none'; }
 
         document.addEventListener('DOMContentLoaded', () => {
-            checkAuth();
+            if (!checkAuth()) return;
             initTheme();
             carregarDados();
             document.getElementById('themeToggle')?.addEventListener('click', toggleTheme);

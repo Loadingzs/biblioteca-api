@@ -9,7 +9,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/emprestimos")
-@CrossOrigin(origins = "*")
 public class EmprestimoController {
 
     @Autowired

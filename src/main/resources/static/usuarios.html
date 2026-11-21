@@ -63,6 +63,7 @@
             <input type="text" id="nome" placeholder="Nome completo *">
             <input type="email" id="email" placeholder="E-mail *">
             <input type="text" id="telefone" placeholder="Telefone *">
+            <input type="password" id="senhaUsuario" autocomplete="new-password" placeholder="Senha de acesso opcional (mínimo 8 caracteres)">
             <div class="modal-buttons">
                 <button class="btn-cancel" onclick="fecharModal()">Cancelar</button>
                 <button class="btn-save" onclick="salvarUsuario()">Salvar</button>
@@ -139,9 +140,9 @@
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${u.id}</td>
-                    <td>${u.nome}</td>
-                    <td>${u.email}</td>
-                    <td>${u.telefone}</td>
+                    <td>${escapeHtml(u.nome)}</td>
+                    <td>${escapeHtml(u.email)}</td>
+                    <td>${escapeHtml(u.telefone)}</td>
                     <td>
                         <button class="btn-edit" type="button" onclick="editarUsuario(${u.id})">✏️</button>
                         <button class="btn-delete" type="button" onclick="deletarUsuario(${u.id})">🗑️</button>
@@ -156,7 +157,7 @@
             if (!usuariosContainer.tabela) return;
             usuariosContainer.tabela.innerHTML = '<tr><td colspan="5" class="table-loading"><div class="spinner-small"></div><br>Carregando usuários...</td></tr>';
             try {
-                const res = await fetch(`${API_URL}/usuarios`);
+                const res = await fetchWithAuth(`${API_URL}/usuarios`);
                 usuarios = await res.json();
                 usuariosFiltrados = [...usuarios];
                 paginaAtual = 1;
@@ -177,6 +178,7 @@
 
         function abrirModalCadastro() {
             editandoUsuarioId = null;
+            document.getElementById('senhaUsuario').value = '';
             if (!usuariosContainer.modal) return;
             usuariosContainer.modalTitulo.textContent = '👤 Novo Usuário';
             usuariosContainer.usuarioId.value = '';
@@ -190,6 +192,7 @@
             const usuario = usuarios.find(u => u.id === id);
             if (!usuario || !usuariosContainer.modal) return;
             editandoUsuarioId = id;
+            document.getElementById('senhaUsuario').value = '';
             usuariosContainer.modalTitulo.textContent = '✏️ Editar Usuário';
             usuariosContainer.usuarioId.value = usuario.id;
             usuariosContainer.nome.value = usuario.nome;
@@ -212,24 +215,29 @@
                 return;
             }
 
-            const usuario = { nome, email, telefone };
+            const senha = document.getElementById('senhaUsuario').value;
+            if (senha && (senha.trim().length === 0 || senha.length < 8 || new TextEncoder().encode(senha).length > 72)) {
+                showToast('error', null, 'A senha deve ter pelo menos 8 caracteres e no máximo 72 bytes.');
+                return;
+            }
+            const usuario = { nome, email, telefone, ...(senha ? { senha } : {}) };
             const url = editandoUsuarioId ? `${API_URL}/usuarios/${editandoUsuarioId}` : `${API_URL}/usuarios`;
             const method = editandoUsuarioId ? 'PUT' : 'POST';
 
             try {
-                const res = await fetch(url, {
+                const res = await fetchWithAuth(url, {
                     method,
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(usuario)
                 });
 
-                if (!res.ok) throw new Error('Erro ao salvar');
+                if (!res.ok || !(await res.json())) throw new Error('Não foi possível salvar o usuário. Confira os dados.');
 
                 showToast('success', null, editandoUsuarioId ? '✅ Usuário atualizado!' : '✅ Usuário cadastrado!');
                 fecharModal();
                 carregarUsuarios();
             } catch (e) {
-                showToast('error', null, '❌ Erro de conexão');
+                showToast('error', null, e.message || 'Erro de conexão');
                 console.error(e);
             }
         }
@@ -237,7 +245,7 @@
         async function deletarUsuario(id) {
             if (!(await showConfirm('⚠️ Tem certeza?'))) return;
             try {
-                const res = await fetch(`${API_URL}/usuarios/${id}`, { method: 'DELETE' });
+                const res = await fetchWithAuth(`${API_URL}/usuarios/${id}`, { method: 'DELETE' });
                 if (!res.ok) throw new Error('Erro ao excluir');
                 showToast('success', null, '✅ Usuário excluído!');
                 carregarUsuarios();
@@ -248,7 +256,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            checkAuth();
+            if (!checkAuth()) return;
             initTheme();
             carregarUsuarios();
             if (usuariosContainer.busca) {

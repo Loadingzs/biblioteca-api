@@ -4,14 +4,18 @@ import com.biblioteca.api.domain.Usuario;
 import com.biblioteca.api.repository.UsuarioRepository;
 import org.springframework.stereotype.Service;
 import java.util.List;
+import java.nio.charset.StandardCharsets;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Service
 public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
+    private final PasswordEncoder passwords;
 
-    public UsuarioService(UsuarioRepository usuarioRepository) {
+    public UsuarioService(UsuarioRepository usuarioRepository, PasswordEncoder passwords) {
         this.usuarioRepository = usuarioRepository;
+        this.passwords = passwords;
     }
     
     // ==================== REGRAS DE NEGÓCIO ====================
@@ -69,6 +73,9 @@ public class UsuarioService {
             return false;
         }
         
+        if (!prepararSenha(usuario)) return false;
+        // A API cadastra leitores; administradores são provisionados fora deste fluxo.
+        usuario.setRole("USER");
         return usuarioRepository.salvar(usuario);
     }
     
@@ -108,7 +115,21 @@ public class UsuarioService {
             return false;
         }
         
+        if (!prepararSenha(usuario)) return false;
+        usuario.setRole(existente.getRole());
         return usuarioRepository.atualizar(usuario);
+    }
+
+    private boolean prepararSenha(Usuario usuario) {
+        String senha = usuario.getSenha();
+        if (senha == null || senha.isEmpty()) {
+            usuario.setSenha(null);
+            return true;
+        }
+        if (senha.isBlank() || senha.length() < 8
+                || senha.getBytes(StandardCharsets.UTF_8).length > 72) return false;
+        usuario.setSenha(passwords.encode(senha));
+        return true;
     }
     
     public boolean deletarUsuario(int id) {

@@ -237,6 +237,11 @@ public class EmprestimoService {
     
     // Renovar empréstimo (adicionar mais dias)
     public boolean renovarEmprestimo(int emprestimoId, int diasAdicionais) {
+        if (diasAdicionais <= 0) {
+            System.err.println("❌ Prazo de renovação deve ser maior que zero");
+            return false;
+        }
+
         Emprestimo emprestimo = emprestimoRepository.buscarPorId(emprestimoId);
         
         if (emprestimo == null) {

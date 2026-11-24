@@ -8,7 +8,7 @@ public class Livro {
     private String autor;
     private String isbn;
     private String genero;
-    private boolean disponivel;
+    private boolean disponivel = true;
     private LocalDate dataCadastro;
     
     // Construtor vazio (necessário para alguns frameworks)

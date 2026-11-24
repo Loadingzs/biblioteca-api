@@ -193,4 +193,33 @@ class SecurityIntegrationTest {
         assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM emprestimos", Integer.class));
         assertFalse(jdbc.queryForObject("SELECT disponivel FROM livros WHERE id=?", Boolean.class, book));
     }
+
+    @Test
+    void unavailableBookRemainsUnavailableAfterCreationAndCannotBeBorrowed() throws Exception {
+        var response = request("POST", "/api/livros", adminToken(), Map.of(
+                "titulo", "Livro em manutenção", "autor", "Autor", "isbn", "9780000000002",
+                "disponivel", false));
+        assertEquals(200, response.statusCode());
+        assertEquals("true", response.body());
+        int book = jdbc.queryForObject("SELECT id FROM livros WHERE isbn='9780000000002'", Integer.class);
+        assertFalse(jdbc.queryForObject("SELECT disponivel FROM livros WHERE id=?", Boolean.class, book));
+
+        var catalog = json.readTree(request("GET", "/api/livros/" + book, adminToken(), null).body());
+        assertFalse(catalog.get("disponivel").asBoolean());
+        int reader = jdbc.queryForObject("SELECT id FROM usuarios WHERE email='leitor@example.com'", Integer.class);
+        var loan = request("POST", "/api/emprestimos", adminToken(),
+                Map.of("livroId", book, "usuarioId", reader, "dias", 7));
+        assertEquals(200, loan.statusCode());
+        assertEquals("false", loan.body());
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM emprestimos", Integer.class));
+    }
+
+    @Test
+    void bookWithoutAvailabilityKeepsDefaultAvailable() throws Exception {
+        var response = request("POST", "/api/livros", adminToken(), Map.of(
+                "titulo", "Livro sem status", "autor", "Autor", "isbn", "9780000000003"));
+        assertEquals(200, response.statusCode());
+        assertEquals("true", response.body());
+        assertTrue(jdbc.queryForObject("SELECT disponivel FROM livros WHERE isbn='9780000000003'", Boolean.class));
+    }
 }

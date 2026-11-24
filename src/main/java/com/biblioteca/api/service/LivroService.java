@@ -79,7 +79,6 @@ public class LivroService {
             return false;
         }
         
-        livro.setDisponivel(true);
         return livroRepository.salvar(livro);
     }
     
